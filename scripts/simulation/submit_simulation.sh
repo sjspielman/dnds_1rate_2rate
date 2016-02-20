@@ -2,7 +2,7 @@
 
 # SJS. Generate submission lines for simulation
 
-TYPE="asym" # or, "nobias"
+TYPE="gtr" # or, "nobias"
 
 
 SBATCH_RAW=raw_launcher_simulation.slurm
@@ -32,7 +32,6 @@ do
                 ALN2=$OUTDIR/${DATA}_withanc.fasta
                 echo python simulate_alignments.py $TREEFILE $TYPE $ALN1 $ALN2 >> $PARAMFILE
  
-            done                    
         done	
     done
     # Create launcher file for this paramfile and submit. 

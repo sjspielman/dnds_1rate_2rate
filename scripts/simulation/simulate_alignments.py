@@ -9,11 +9,11 @@ from Bio import AlignIO
 from pyvolve import *
 codons = ["AAA", "AAC", "AAG", "AAT", "ACA", "ACC", "ACG", "ACT", "AGA", "AGC", "AGG", "AGT", "ATA", "ATC", "ATG", "ATT", "CAA", "CAC", "CAG", "CAT", "CCA", "CCC", "CCG", "CCT", "CGA", "CGC", "CGG", "CGT", "CTA", "CTC", "CTG", "CTT", "GAA", "GAC", "GAG", "GAT", "GCA", "GCC", "GCG", "GCT", "GGA", "GGC", "GGG", "GGT", "GTA", "GTC", "GTG", "GTT", "TAC", "TAT", "TCA", "TCC", "TCG", "TCT", "TGC", "TGG", "TGT", "TTA", "TTC", "TTG", "TTT"]
 
-assert(len(sys.argv) == 3), "Usage: python simulate_alignments.py <treefile> <type>"
+assert(len(sys.argv) == 5), "Usage: python simulate_alignments.py <treefile> <type> <seqoutfile> <seqanoutfile>"
 treefile        = sys.argv[1]
 type            = sys.argv[2]
-seq_anc_outfile = sys.argv[3]
-seq_outfile     = sys.argv[4]
+seq_outfile     = sys.argv[3]
+seq_anc_outfile = sys.argv[4]
 
 
 # Setup mutation rates and state frequencies

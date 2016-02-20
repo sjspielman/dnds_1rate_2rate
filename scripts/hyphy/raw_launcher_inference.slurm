@@ -13,12 +13,13 @@
 # 
 #         <------ Setup Parameters ------>
 #
-#SBATCH -J simulation          # Job name
-#SBATCH -n 25             
+#SBATCH -J inference          # Job name
+#SBATCH -n 3       
+#SBATCH -N 3             
 #SBATCH -p normal             # Queue name
 #SBATCH -o o.%j      # Name of stdout output file (%j expands to jobid)
 #SBATCH -e e.%j      # Name of stdout output file (%j expands to jobid)
-#SBATCH -t 00:45:00            # Run time (hh:mm:ss)
+#SBATCH -t 00:30:00            # Run time (hh:mm:ss)
 #          <------ Account String ----->
 # <--- (Use this ONLY if you have MULTIPLE accounts) --->
 ##SBATCH -A
@@ -28,7 +29,7 @@ module load launcher
 export LAUNCHER_PLUGIN_DIR=$LAUNCHER_DIR/plugins
 export LAUNCHER_RMI=SLURM
 export LAUNCHER_JOB_FILE=PLACEHOLDER
-export LAUNCHER_WORKDIR=/home1/02012/sspielma/dnmu/scripts/simulation
+export LAUNCHER_WORKDIR=/home1/02012/sspielma/dnmu/scripts/hyphy
  
 $LAUNCHER_DIR/paramrun
 
