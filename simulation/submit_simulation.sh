@@ -2,7 +2,7 @@
 
 # SJS. Generate submission lines for simulation
 
-TYPE="gtr" # or, "nobias"
+TYPE="gtr" # OR:, "bias", "nobias"
 
 
 SBATCH_RAW=raw_launcher_simulation.slurm
@@ -13,7 +13,7 @@ OUTDIR=${REPODIR}/data/alignments
 mkdir -p $OUTDIR
     
 
-for REP in {2..50}
+for REP in {1..50}
 do
     # touch launcher file and paramfile to go along with it for this rep 
     LAUNCHFILE=launcher_rep${REP}.slurm
