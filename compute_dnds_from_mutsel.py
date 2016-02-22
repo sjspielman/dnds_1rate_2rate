@@ -68,7 +68,7 @@ class dNdS_from_MutSel():
         ''' 
             Compute dN from mutation-selection parameters: a dictionary of equilibrium codon frequencies and a dictionary of mutation rates.
         '''
-        return self.compute_quantity("dn")
+        return self.compute_quantity("nonsyn")
 
 
 
@@ -77,15 +77,8 @@ class dNdS_from_MutSel():
         ''' 
             Compute dS from mutation-selection parameters: a dictionary of equilibrium codon frequencies and a dictionary of mutation rates.
         '''
-        return self.compute_quantity("ds")
+        return self.compute_quantity("syn")
 
-
-
-    def compute_mu(self):
-        '''
-            Compute the overall mutation rate from mutation-selection parameters: dictionary of equilibrium codon frequencies and a dictionary of mutation rates.
-        '''
-        return self.compute_quantity("mu")
 
 
 
@@ -104,43 +97,23 @@ class dNdS_from_MutSel():
             return dn/ds
 
 
-    def compute_dnmu(self):
-        ''' 
-            Compute dN/dS from mutation-selection parameters: a dictionary of equilibrium codon frequencies and a dictionary of mutation rates.
-        '''
-        dn = self.compute_dn()
-        mu = self.compute_mu()
-        
-        if dn <= self.ZERO:
-            return 0.
-        elif mu <= self.ZERO:
-            return np.inf
-        else:
-            return dn/mu
-            
-
     def compute_quantity(self, type):
         '''
-            Compute either dN, dS, or mu (type is either dN, dS, or mu, case insensitive).
+            Compute either dN or dS (type is 'nonsyn' or 'syn', respectively).
         '''
-        type = type.lower()
-        
         numer = 0.
-        if type == "mu":
-            denom = 1.
-        else:
-            denom = 0.
-        
+        denom = 0.
+
         for codon in self.codon_freqs_dict:
             rate = 0.
             sites = 0.
             rate, sites = self.calc_paths(codon, type)
             numer += rate
-            if type != "mu":
-                denom += sites
+            denom += sites
         
         assert( denom > self.ZERO ), "\n\nProvided frequencies indicate no evolution is 'possible'."
         return numer/denom
+
 
 
 
@@ -150,21 +123,16 @@ class dNdS_from_MutSel():
             Compute a term in the quantity numerator for a given source codon.
         '''
         rate = 0.
-        if type == "mu":
-            sites = 1.
-        else:
-            sites = 0.
-        
+        sites = 0.
         source_freq = self.codon_freqs_dict[source]
         for target in self.codons:
             diff = self.get_nuc_diff(source, target) # only consider single nucleotide differences since are calculating instantaneous.
-            if len(diff) == 2:
-                if (type == 'dn' and self.codon_dict[source] != self.codon_dict[target]) or (type == 'ds' and self.codon_dict[source] == self.codon_dict[target]):
+            if (type == 'nonsyn' and self.codon_dict[source] != self.codon_dict[target]) or (type == 'syn' and self.codon_dict[source] == self.codon_dict[target]):
+                if len(diff) == 2:
                     rate  += self.calc_subst_prob( source_freq, self.codon_freqs_dict[target], self.mu_dict[diff], self.mu_dict[diff[1]+diff[0]] )
-                    sites += (self.mu_dict[diff] * source_freq)
-                elif type == 'mu':
-                    rate += self.mu_dict[diff]
+                    sites += self.mu_dict[diff]
         rate  *= source_freq
+        sites *= source_freq
         return rate, sites
 
 
