@@ -27,7 +27,7 @@ module load launcher
 
 export LAUNCHER_PLUGIN_DIR=$LAUNCHER_DIR/plugins
 export LAUNCHER_RMI=SLURM
-export LAUNCHER_JOB_FILE=PLACEHOLDER
+export LAUNCHER_JOB_FILE=simulation_commands_gtr
 export LAUNCHER_WORKDIR=/home1/02012/sspielma/dnmu/simulation
  
 $LAUNCHER_DIR/paramrun

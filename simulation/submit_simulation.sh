@@ -2,7 +2,7 @@
 
 # SJS. Generate submission lines for simulation
 
-TYPE="gtr" # or, "nobias"
+TYPE="gtr" # OR:, "bias", "nobias"
 
 
 SBATCH_RAW=raw_launcher_simulation.slurm
@@ -13,14 +13,13 @@ OUTDIR=${REPODIR}/data/alignments
 mkdir -p $OUTDIR
     
 
-for REP in {2..50}
+LAUNCHFILE=launcher_simulate_${TYPE}.slurm
+PARAMFILE=simulation_commands_${TYPE}
+touch $LAUNCHFILE
+touch $PARAMFILE
+
+for REP in {1..50}
 do
-    # touch launcher file and paramfile to go along with it for this rep 
-    LAUNCHFILE=launcher_rep${REP}.slurm
-    PARAMFILE=inference_commands${REP}
-    touch $LAUNCHFILE
-    touch $PARAMFILE
-    
     for N in n7 n8 n9 n10 n11
     do            
         for BL in bl0.0025 bl0.01 bl0.04 bl0.16 bl0.64
@@ -34,8 +33,9 @@ do
  
         done	
     done
-    # Create launcher file for this paramfile and submit. 
-    sed "s/PLACEHOLDER/$PARAMFILE/" $SBATCH_RAW > $LAUNCHFILE
-    sbatch $LAUNCHFILE
 done
+
+sed "s/PLACEHOLDER/$PARAMFILE/" $SBATCH_RAW > $LAUNCHFILE
+#sbatch $LAUNCHFILE
+
 

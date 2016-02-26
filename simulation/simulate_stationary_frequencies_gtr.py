@@ -1,6 +1,6 @@
 # SJS 
-# Script to simulate 100 sets of stationary codon frequencies with mutational gtrmetry, specifically with yeast mutation rates from Zhu et al. (2014) PNAS
-# Uses the same codon fitness values as the nobias set
+# Script to simulate 100 sets of stationary codon frequencies with under a GTR mutation model
+# Uses the same codon fitness values as the original nobias dataset
 
 import numpy as np
 import csv
@@ -14,13 +14,16 @@ raw_codon_freqs = np.loadtxt(raw_freqfile)
 # Output file names
 gtr_freqfile = "codon_freq_lib_gtr.txt"
 
-# gtr_rates = np.random.gamma(2.,0.5, 6)
-# pi_a = 0.3
-# pi_t = 0.3
-# pi_c = 0.2
-# pi_g = 0.2
-# mu_dict = {'AG':gtr_rates[0]*pi_g, 'GA':gtr_rates[0]*pi_a, 'CT':gtr_rates[1]*pi_t, 'TC':gtr_rates[1]*pi_c, 'AC':gtr_rates[2]*pi_c, 'CA':gtr_rates[2]*pi_a, 'TG':gtr_rates[3]*pi_g, 'GT':gtr_rates[3]*pi_t, 'AT':gtr_rates[4]*pi_t, 'TA':gtr_rates[4]*pi_a, 'GC':gtr_rates[5]*pi_c, 'CG':gtr_rates[5]*pi_g}
-mu_dict = {'AC': 0.12806341921812744, 'GT': 0.036330424021680262, 'AG': 0.11300569340489693, 'CA': 0.19209512882719118, 'CG': 0.023165377637234918, 'GC': 0.023165377637234918, 'AT': 0.17689851535472259, 'GA': 0.16950854010734537, 'CT': 0.51939282525298114, 'TG': 0.024220282681120177, 'TC': 0.3462618835019875, 'TA': 0.17689851535472259}
+# The GTR rates were derived with the following code:
+#### gtr_rates =  np.sort( np.random.gamma(1., 1.5, 6))
+#### gtr_rates = gtr_rates[::-1] # This way largest are first, as transitions are first in the dictionary.
+# These pi values were simply chosen to create some amount of A/T bias
+pi_a = 0.32
+pi_t = 0.34
+pi_c = 0.16
+pi_g = 0.18
+gtr_rates = [ 1.64390601,  1.27668478,  0.795571  ,  0.44377381,  0.32759197,  0.25651819]
+mu_dict = {'AG':gtr_rates[0]*pi_g, 'GA':gtr_rates[0]*pi_a, 'CT':gtr_rates[1]*pi_t, 'TC':gtr_rates[1]*pi_c, 'AC':gtr_rates[2]*pi_c, 'CA':gtr_rates[2]*pi_a, 'TG':gtr_rates[3]*pi_g, 'GT':gtr_rates[3]*pi_t, 'AT':gtr_rates[4]*pi_t, 'TA':gtr_rates[4]*pi_a, 'GC':gtr_rates[5]*pi_c, 'CG':gtr_rates[5]*pi_g}
 
 
 
