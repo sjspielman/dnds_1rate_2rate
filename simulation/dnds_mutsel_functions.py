@@ -29,6 +29,8 @@ def codon_fitness_to_freqs(codon_fitness):
 
 
 
+
+
 def add_bias(rawfreqs, bias):
     ''' 
         Derive new codon frequencies which incorporate codon bias.
@@ -65,7 +67,8 @@ def add_bias(rawfreqs, bias):
     new_freqs_dict = dict(zip(codons, new_freqs))
     
     return new_freqs, new_freqs_dict
-    
+
+
 
 
 

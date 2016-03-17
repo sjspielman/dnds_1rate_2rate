@@ -8,20 +8,102 @@ require(cowplot)
 require(readr)
 
 
-# Asym plots, figuring out what's going on. Well, shit. And, rmsd plots.
-asym.corr1 <- dat.sum.mean %>% filter(type == "asym", method %in% lineplot_methods) %>% ggplot(aes(x = factor(ntaxa), y = r1, group = method, color=method)) +  geom_line(size=0.75, alpha=0.7) + geom_point(size=2, alpha=0.7) + facet_grid(~bl, scales = "free_x") + scale_y_continuous(limits=c(0, 1), breaks = c(0.1, 0.3, 0.5, 0.7, 0.9)) + background_grid(major = "xy") + xlab("Number of Taxa") + ylab("Pearson Correlation") + scale_color_manual(values = line_colors, name = "Inference Method") + ggtitle("Asymmetry, True1")
-asym.corr2 <- dat.sum.mean %>% filter(type == "asym", method %in% lineplot_methods) %>% ggplot(aes(x = factor(ntaxa), y = r2, group = method, color=method)) +  geom_line(size=0.75, alpha=0.7) + geom_point(size=2, alpha=0.7) + facet_grid(~bl, scales = "free_x") + scale_y_continuous(limits=c(0, 1), breaks = c(0.1, 0.3, 0.5, 0.7, 0.9)) + background_grid(major = "xy") + xlab("Number of Taxa") + ylab("Pearson Correlation") + scale_color_manual(values = line_colors, name = "Inference Method") + ggtitle("Asymmetry, True2")
+dat.mean$method <- factor(dat.mean$method, levels = c("FEL1", "SLAC1", "FUBAR1", "FEL2", "SLAC2", "FUBAR2"))
+dat.mean <-dat %>% group_by(method, ntaxa, bl, truetype, type) %>% summarize(r.mean = mean(r), estbias.mean = mean(estbias), rmsd.mean = mean(rmsd))
+dat.mean$method <- factor(dat.mean$method, levels = c("FEL1", "SLAC1", "FUBAR1", "FEL2", "SLAC2", "FUBAR2"))
+line_colors <- c("red1", "black", "red4", "steelblue1", "green", "navy")
+a<- dat.mean %>% filter(type == "nobias", truetype == "true1") %>% ggplot(aes(x = factor(ntaxa), y = r.mean, group = method, color=method)) +  geom_line(size=0.75, alpha=0.7) + geom_point(size=2, alpha=0.7) + facet_grid(~bl, scales = "free_x") + scale_y_continuous(limits=c(0, 1), breaks = c(0.1, 0.3, 0.5, 0.7, 0.9)) + background_grid(major = "xy") + xlab("Number of Taxa") + ylab("Pearson Correlation") + scale_color_manual(values = line_colors, name = "Inference Method") + ggtitle("No bias")
+b<- dat.mean %>% filter(type == "bias", truetype == "true2") %>% ggplot(aes(x = factor(ntaxa), y = r.mean, group = method, color=method)) +  geom_line(size=0.75, alpha=0.7) + geom_point(size=2, alpha=0.7) + facet_grid(~bl, scales = "free_x") + scale_y_continuous(limits=c(0, 1), breaks = c(0.1, 0.3, 0.5, 0.7, 0.9)) + background_grid(major = "xy") + xlab("Number of Taxa") + ylab("Pearson Correlation") + scale_color_manual(values = line_colors, name = "Inference Method") + ggtitle("Bias")
 
-asym.estbias2  <- dat.sum.mean %>% filter(type == "asym", method %in% lineplot_methods) %>% ggplot(aes(x = factor(ntaxa), y = estbias2, group = method, color=method)) +  geom_line(size=0.75, alpha=0.7) + geom_point(size=2, alpha=0.7) + facet_grid(~bl, scales = "free_x") + scale_y_continuous(limits=c(-0.55, 2.1)) + background_grid(major = "xy") + xlab("Number of Taxa") + ylab("Estimator Bias") + geom_hline(yintercept = 0) + scale_color_manual(values = line_colors, name = "Inference Method") + ggtitle("Asymmetry, True2")
-asym.estbias1  <- dat.sum.mean %>% filter(type == "asym", method %in% lineplot_methods) %>% ggplot(aes(x = factor(ntaxa), y = estbias1, group = method, color=method)) +  geom_line(size=0.75, alpha=0.7) + geom_point(size=2, alpha=0.7) + facet_grid(~bl, scales = "free_x") + scale_y_continuous(limits=c(-0.55, 2.1)) + background_grid(major = "xy") + xlab("Number of Taxa") + ylab("Estimator Bias") + geom_hline(yintercept = 0) + scale_color_manual(values = line_colors, name = "Inference Method") + ggtitle("Asymmetry, True1")
+plot_grid(a,b,nrow=2)
+# 
 
-asym.rmsd2  <- dat.sum.mean %>% filter(type == "asym", method %in% lineplot_methods) %>% ggplot(aes(x = factor(ntaxa), y = rmsd2, group = method, color=method)) +  geom_line(size=0.75, alpha=0.7) + geom_point(size=2, alpha=0.7) + facet_grid(~bl, scales = "free_x") + scale_y_continuous(limits=c(0, 3.5)) + background_grid(major = "xy") + xlab("Number of Taxa") + ylab("RSMD") + geom_hline(yintercept = 0) + scale_color_manual(values = line_colors, name = "Inference Method") + ggtitle("Asymmetry, True2")
-asym.rmsd1  <- dat.sum.mean %>% filter(type == "asym", method %in% lineplot_methods) %>% ggplot(aes(x = factor(ntaxa), y = rmsd1, group = method, color=method)) +  geom_line(size=0.75, alpha=0.7) + geom_point(size=2, alpha=0.7) + facet_grid(~bl, scales = "free_x") + scale_y_continuous(limits=c(0, 3.5)) + background_grid(major = "xy") + xlab("Number of Taxa") + ylab("RMSD") + geom_hline(yintercept = 0) + scale_color_manual(values = line_colors, name = "Inference Method") + ggtitle("Asymmetry, True1")
+# 
+# dn.ds.corr %>% filter(type == "bias", method== "FEL2") %>% ggplot(aes(x = factor(ntaxa), y = r, fill=parameter)) +  geom_boxplot() + facet_grid(~bl, scales = "free_x") + coord_cartesian(ylim=c(-0.3, 1)) + scale_y_continuous(breaks = c(-0.1, 0.1, 0.3, 0.5, 0.7, 0.9)) + background_grid(major = "xy") + xlab("Number of Taxa") + ylab("Pearson Correlation") + scale_fill_manual(values = c("blue", "yellow"))  + theme(legend.position = "none") -> p1
+# 
+# dn.ds.rmsd %>% filter(type == "bias", method== "FEL2", bl==0.16) %>% ggplot(aes(x = factor(ntaxa), y = rmsd, fill=parameter)) +  geom_boxplot() + coord_cartesian(ylim=c(0, 1.5)) + background_grid(major = "xy") + xlab("Number of Taxa") + ylab("RMSD") + scale_fill_manual(values = c("blue", "yellow"))  + theme(legend.position = "none") -> p2
+# 
+# dn.ds.corr %>% filter(type == "bias", method== "FEL2") %>% ggplot(aes(x = factor(ntaxa), y = r, fill=parameter)) +  geom_boxplot() + scale_fill_manual(values = c("blue", "yellow"), name = "Parameter", labels=c("dN", "dS")) + theme(legend.position="bottom", legend.margin = unit(0, "cm"), legend.text = element_text(size=9), legend.key.size = unit(0.4, "cm")) -> legend.plot
+# 
+# grobs <- ggplotGrob(legend.plot)$grobs
+# legend <- grobs[[which(sapply(grobs, function(x) x$name) == "guide-box")]]
+# 
+#           
+# plot_grid(p1, p2, legend, nrow=2, rel_heights=c(1,1, 0.05))
+# 
+# 
+# 
+# 
+# 
+# 
+# 
+# line_colors <- c("red1", "red3", "red4", "steelblue1", "steelblue4", "navy")
+# subline_colors <- c("red1", "red4", "steelblue1", "navy")
+# sublineplot_methods <- c("FEL1", "FUBAR1", "FEL2",  "FUBAR2")
+# theme_set(theme_cowplot() + theme(axis.text.y = element_text(size = 12), axis.text.x = element_text(size = 9, angle=30),  axis.title = element_text(size = 12), panel.border = element_rect(size = 0.5), panel.margin = unit(0.75, "lines"), strip.background = element_rect(fill="white"), strip.text = element_text(size=12)))
+# 
+# 
+# 
+# 
+# dn.sum.mean <- dn.sum %>% group_by(method, ntaxa, bl, type) %>% summarize(r = mean(r1), estbias. = mean(estbias1), rmsd = mean(rmsd1))
+# colnames(dn.sum.mean) <- c("method", "ntaxa", "bl", "type", "r.dn", "estbias.dn", "rmsd.dn")
+# ds.sum.mean <- ds.sum %>% group_by(method, ntaxa, bl, type) %>% summarize(r = mean(r1), estbias = mean(estbias1), rmsd = mean(rmsd1))
+# colnames(ds.sum.mean) <- c("method", "ntaxa", "bl", "type", "r.ds", "estbias.ds", "rmsd.ds")
+# dnds.sum.mean$method <- factor(dnds.sum.mean$method, levels = c("FEL1", "SLAC1", "FUBAR1", "FEL2", "SLAC2", "FUBAR2"))
+# dn.sum.mean$method <- factor(dn.sum.mean$method, levels = c("FEL1", "SLAC1", "FUBAR1", "FEL2", "SLAC2", "FUBAR2"))
+# ds.sum.mean$method <- factor(ds.sum.mean$method, levels = c("FEL1", "SLAC1", "FUBAR1", "FEL2", "SLAC2", "FUBAR2"))
+# 
+# ### dN/dS correlation plots ###
+# 
+# dnds.sum.mean %>% filter(type == "nobias") %>% ggplot(aes(x = factor(ntaxa), y = r1, group = method, color=method)) +  geom_line(size=0.75, alpha=0.7) + geom_point(size=2, alpha=0.7) + facet_grid(~bl, scales = "free_x") + scale_y_continuous(limits=c(0, 1), breaks = c(0.1, 0.3, 0.5, 0.7, 0.9)) + background_grid(major = "xy") + xlab("Number of Taxa") + ylab("Pearson Correlation") + scale_color_manual(values = line_colors, name = "Inference Method") + ggtitle("No bias")
+# 
+# dnds.sum.mean %>% filter(type == "bias") %>% ggplot(aes(x = factor(ntaxa), y = r1, group = method, color=method)) +  geom_line(size=0.75, alpha=0.7) + geom_point(size=2, alpha=0.7) + facet_grid(~bl, scales = "free_x") + scale_y_continuous(limits=c(0, 1), breaks = c(0.1, 0.3, 0.5, 0.7, 0.9)) + background_grid(major = "xy") + xlab("Number of Taxa") + ylab("Pearson Correlation") + scale_color_manual(values = line_colors, name = "Inference Method") + ggtitle("Bias")
+# 
+# dnds.sum.mean %>% filter(type == "bias") %>% ggplot(aes(x = factor(ntaxa), y = r2, group = method, color=method)) +  geom_line(size=0.75, alpha=0.7) + geom_point(size=2, alpha=0.7) + facet_grid(~bl, scales = "free_x") + scale_y_continuous(limits=c(0, 1), breaks = c(0.1, 0.3, 0.5, 0.7, 0.9)) + background_grid(major = "xy") + xlab("Number of Taxa") + ylab("Pearson Correlation") + scale_color_manual(values = line_colors, name = "Inference Method") + ggtitle("Bias")
+# 
+# 
+# ### dN/dS RMSD plots ###
+# 
+# dnds.sum.mean %>% filter(type == "nobias") %>% ggplot(aes(x = factor(ntaxa), y = rmsd1, group = method, color=method)) +  geom_line(size=0.75, alpha=0.7) + geom_point(size=2, alpha=0.7) + facet_grid(~bl, scales = "free_x") + coord_cartesian(ylim = c(0,1)) + background_grid(major = "xy") + xlab("Number of Taxa") + ylab("RMSD") + scale_color_manual(values = line_colors, name = "Inference Method") + ggtitle("No bias")
+# 
+# dnds.sum.mean %>% filter(type == "bias") %>% ggplot(aes(x = factor(ntaxa), y = rmsd1, group = method, color=method)) +  geom_line(size=0.75, alpha=0.7) + geom_point(size=2, alpha=0.7) + facet_grid(~bl, scales = "free_x") + coord_cartesian(ylim = c(0,1)) + background_grid(major = "xy") + xlab("Number of Taxa") + ylab("RMSD1") + scale_color_manual(values = line_colors, name = "Inference Method") + ggtitle("Bias")
+# 
+# dnds.sum.mean %>% filter(type == "bias") %>% ggplot(aes(x = factor(ntaxa), y = rmsd2, group = method, color=method)) +  geom_line(size=0.75, alpha=0.7) + geom_point(size=2, alpha=0.7) + facet_grid(~bl, scales = "free_x") + coord_cartesian(ylim = c(0,1)) + background_grid(major = "xy") + xlab("Number of Taxa") + ylab("RMSD2") + scale_color_manual(values = line_colors, name = "Inference Method") + ggtitle("Bias")
+# 
+# 
+# ### dN correlation plots ###
+# 
+# dn.sum.mean %>% filter(type == "nobias", method %in% lineplot_methods) %>% ggplot(aes(x = factor(ntaxa), y = r.dn, group = method, color=method)) +  geom_line(size=0.75, alpha=0.7) + geom_point(size=2, alpha=0.7) + facet_grid(~bl, scales = "free_x") + scale_y_continuous(limits=c(0, 1), breaks = c(0.1, 0.3, 0.5, 0.7, 0.9)) + background_grid(major = "xy") + xlab("Number of Taxa") + ylab("Pearson Correlation, dN") + scale_color_manual(values = subline_colors, name = "Inference Method") + ggtitle("No bias")
+# 
+# dn.sum.mean %>% filter(type == "bias", method %in% lineplot_methods) %>% ggplot(aes(x = factor(ntaxa), y = r.dn, group = method, color=method)) +  geom_line(size=0.75, alpha=0.7) + geom_point(size=2, alpha=0.7) + facet_grid(~bl, scales = "free_x") + scale_y_continuous(limits=c(0, 1), breaks = c(0.1, 0.3, 0.5, 0.7, 0.9)) + background_grid(major = "xy") + xlab("Number of Taxa") + ylab("Pearson Correlation, dN") + scale_color_manual(values = subline_colors, name = "Inference Method") + ggtitle("Bias")
+# 
+# 
+# ### dN RMSD plots ###
+# 
+# dn.sum.mean %>% filter(type == "nobias") %>% ggplot(aes(x = factor(ntaxa), y = rmsd.dn, group = method, color=method)) +  geom_line(size=0.75, alpha=0.7) + geom_point(size=2, alpha=0.7) + facet_grid(~bl, scales = "free_x") + coord_cartesian(ylim = c(0,1)) + background_grid(major = "xy") + xlab("Number of Taxa") + ylab("RMSD, dN") + scale_color_manual(values = subline_colors, name = "Inference Method") + ggtitle("No bias")
+# 
+# dn.sum.mean %>% filter(type == "bias") %>% ggplot(aes(x = factor(ntaxa), y = rmsd.dn, group = method, color=method)) +  geom_line(size=0.75, alpha=0.7) + geom_point(size=2, alpha=0.7) + facet_grid(~bl, scales = "free_x") + coord_cartesian(ylim = c(0,1)) + background_grid(major = "xy") + xlab("Number of Taxa") + ylab("RMSD, dN") + scale_color_manual(values = subline_colors, name = "Inference Method") + ggtitle("Bias")
+# 
+# 
+# ## dN and dS separately correlation plots ##
+# 
+# 
+# 
+# 
+# ### dS correlation plots ###
+# 
+# ds.sum.mean %>% filter(type == "bias", method %in% c("FEL2", "FUBAR2")) %>% ggplot(aes(x = factor(ntaxa), y = r.ds, group = method, color=method)) +  geom_line(size=0.75, alpha=0.7) + geom_point(size=2, alpha=0.7) + facet_grid(~bl, scales = "free_x") + scale_y_continuous(limits=c(0, 1), breaks = c(0.1, 0.3, 0.5, 0.7, 0.9)) + background_grid(major = "xy") + xlab("Number of Taxa") + ylab("Pearson Correlation, dS") + scale_color_manual(values = c("orange", "darkgreen"), name = "Inference Method") + ggtitle("Bias")
+# 
+# 
+# ### dS RMSD plots ###
+# 
+# ds.sum.mean %>% filter(type == "bias") %>% ggplot(aes(x = factor(ntaxa), y = rmsd.ds, group = method, color=method)) +  geom_line(size=0.75, alpha=0.7) + geom_point(size=2, alpha=0.7) + facet_grid(~bl, scales = "free_x") + scale_y_continuous(limits=c(0, 4)) + background_grid(major = "xy") + xlab("Number of Taxa") + ylab("RMSD, dS") + scale_color_manual(values = subline_colors, name = "Inference Method") + ggtitle("Bias")
+# 
+# 
+# 
+# 
+# 
 
-nobias.rmsd  <- dat.sum.mean %>% filter(type == "nobias", method %in% lineplot_methods) %>% ggplot(aes(x = factor(ntaxa), y = rmsd1, group = method, color=method)) +  geom_line(size=0.75, alpha=0.7) + geom_point(size=2, alpha=0.7) + facet_grid(~bl, scales = "free_x") + scale_y_continuous(limits=c(0, 3.5)) + background_grid(major = "xy") + xlab("Number of Taxa") + ylab("RMSD") + geom_hline(yintercept = 0) + scale_color_manual(values = line_colors, name = "Inference Method") + ggtitle("No codon bias, True1")
-
-bias.rmsd1  <- dat.sum.mean %>% filter(type == "bias", method %in% lineplot_methods) %>% ggplot(aes(x = factor(ntaxa), y = rmsd1, group = method, color=method)) +  geom_line(size=0.75, alpha=0.7) + geom_point(size=2, alpha=0.7) + facet_grid(~bl, scales = "free_x") + scale_y_continuous(limits=c(0, 3.5)) + background_grid(major = "xy") + xlab("Number of Taxa") + ylab("RMSD") + geom_hline(yintercept = 0) + scale_color_manual(values = line_colors, name = "Inference Method") + ggtitle("No codon bias, True1")
-bias.rmsd2  <- dat.sum.mean %>% filter(type == "bias", method %in% lineplot_methods) %>% ggplot(aes(x = factor(ntaxa), y = rmsd2, group = method, color=method)) +  geom_line(size=0.75, alpha=0.7) + geom_point(size=2, alpha=0.7) + facet_grid(~bl, scales = "free_x") + scale_y_continuous(limits=c(0, 3.5)) + background_grid(major = "xy") + xlab("Number of Taxa") + ylab("RSMD") + geom_hline(yintercept = 0) + scale_color_manual(values = line_colors, name = "Inference Method") + ggtitle("No codon bias, True2")
 
 
 # Read in summary data frame results. 

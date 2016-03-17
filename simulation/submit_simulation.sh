@@ -2,7 +2,7 @@
 
 # SJS. Generate submission lines for simulation
 
-TYPE="gtr" # OR:, "bias", "nobias"
+TYPE="bias_gtr" # OR:, "bias", "nobias"
 
 
 SBATCH_RAW=raw_launcher_simulation.slurm
@@ -18,7 +18,7 @@ PARAMFILE=simulation_commands_${TYPE}
 touch $LAUNCHFILE
 touch $PARAMFILE
 
-for REP in {1..50}
+for REP in {2..50}
 do
     for N in n7 n8 n9 n10 n11
     do            
@@ -27,8 +27,8 @@ do
                     
                 DATA=rep${REP}_${N}_${BL}_${TYPE}
                 TREEFILE=$REPODIR/data/trees/${N}_${BL}.tre 
-                ALN1=$OUTDIR/${DATA}.fasta
-                ALN2=$OUTDIR/${DATA}_withanc.fasta
+                ALN1=${DATA}.fasta
+                ALN2=${DATA}_withanc.fasta
                 echo python simulate_alignments.py $TREEFILE $TYPE $ALN1 $ALN2 >> $PARAMFILE
  
         done	

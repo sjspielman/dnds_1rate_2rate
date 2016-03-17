@@ -18,10 +18,8 @@
 #SBATCH -p normal             # Queue name
 #SBATCH -o o.%j      # Name of stdout output file (%j expands to jobid)
 #SBATCH -e e.%j      # Name of stdout output file (%j expands to jobid)
-#SBATCH -t 00:30:00            # Run time (hh:mm:ss)
-#          <------ Account String ----->
-# <--- (Use this ONLY if you have MULTIPLE accounts) --->
-##SBATCH -A 
+#SBATCH -t 05:00:00            # Run time (hh:mm:ss)
+#SBATCH -A A-bio7
 #------------------------------------------------------
 module load launcher
 

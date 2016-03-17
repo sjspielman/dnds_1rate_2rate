@@ -3,7 +3,7 @@
 # SJS. Generate submission lines for dN/dS inference on Stampede. The stdout is sent to the file inference_commands
 
 
-TYPE="gtr"
+TYPE="bias_gtr"
 SBATCH_RAW=raw_launcher_inference.slurm
 
 rm launcher_rep*
@@ -14,7 +14,7 @@ REPODIR=$HOME/dnmu
 OUTDIR=${REPODIR}/results
 mkdir -p $OUTDIR
     
-for REP in {1..50}
+for REP in {2..50}
 do
     # touch launcher file and paramfile to go along with it for this rep 
     LAUNCHFILE=launcher_rep${REP}.slurm
@@ -26,7 +26,7 @@ do
     do            
         for BL in bl0.0025 bl0.01 bl0.04 bl0.16 bl0.64
         do
-            for METHOD in FEL1_GTR FEL2_GTR
+            for METHOD in FEL2_GTR
             do
                     
                 DATA=rep${REP}_${N}_${BL}_${TYPE}
