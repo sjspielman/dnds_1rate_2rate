@@ -28,7 +28,7 @@ cp $HOME/bin/HYPHYMP .
 TOPDIR=`pwd`
 sed -i "s@placeholder@$TOPDIR@g" $BATCHFILE
 
-./HYPHYMP CPU=12 $BATCHFILE
+./HYPHYMP CPU=48 $BATCHFILE
 
 # Parse the output
 if [[ $METHOD == "SLAC" || $METHOD == "SLAC_GTR" ]]; then
