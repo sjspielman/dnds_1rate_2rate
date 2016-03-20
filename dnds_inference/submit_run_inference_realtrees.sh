@@ -13,17 +13,18 @@ REPODIR=$HOME/dnmu
 OUTDIR=${REPODIR}/results_realtrees
 mkdir -p $OUTDIR
 
-TREE=camelid  # camelid hivrt amine h3 
-LAUNCHFILE=launcher_rep_${TREE}.slurm
-PARAMFILE=inference_commands_${TREE}
+LAUNCHFILE=launcher1.slurm
+PARAMFILE=inference_commands1
 touch $LAUNCHFILE
 touch $PARAMFILE
     
-for REP in {1..5}
+for TREE in h3
+do
+for REP in {36..50}
 do    
     for TYPE in gtr bias_gtr
     do  
-        for METHOD in FUBAR1 FUBAR2 SLAC_GTR FEL1_GTR FEL2_GTR                     
+        for METHOD in FUBAR1 FUBAR2 SLAC_GTR                     
         do   
             DATA=rep${REP}_${TREE}_${TYPE}
             TREEFILE=$REPODIR/data/trees/${TREE}.tre 
@@ -34,6 +35,7 @@ do
             echo sh run_inference.sh $REPODIR $DATA $ALN $TREEFILE $METHOD $OUTFILE1 $OUTFILE2 >> $PARAMFILE
         done       
     done
+done
 done
 sed "s/PLACEHOLDER/$PARAMFILE/" $SBATCH_RAW > $LAUNCHFILE
 sbatch $LAUNCHFILE

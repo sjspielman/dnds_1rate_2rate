@@ -14,12 +14,12 @@
 #         <------ Setup Parameters ------>
 #
 #SBATCH -J inference          # Job name
-#SBATCH -n 50       
-#SBATCH -N 50           
+#SBATCH -n 30       
+#SBATCH -N 30           
 #SBATCH -p normal             # Queue name
 #SBATCH -o o.%j      # Name of stdout output file (%j expands to jobid)
 #SBATCH -e e.%j      # Name of stdout output file (%j expands to jobid)
-#SBATCH -t 01:00:00            # Run time (hh:mm:ss)
+#SBATCH -t 03:00:00            # Run time (hh:mm:ss)
 #SBATCH -A A-bio7
 #------------------------------------------------------
 module load launcher

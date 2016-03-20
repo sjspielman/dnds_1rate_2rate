@@ -21,11 +21,11 @@ PARAMFILE=simulation_commands_realtrees1
 touch $LAUNCHFILE
 touch $PARAMFILE
     
-for REP in {1..5}
+for REP in {21..50}
 do    
     for TYPE in gtr bias_gtr
     do
-        for TREE in amine h3
+        for TREE in h3 amine
         do                                
             DATA=rep${REP}_${TREE}_${TYPE}
             TREEFILE=$REPODIR/data/trees/${TREE}.tre 
