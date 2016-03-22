@@ -62,6 +62,51 @@ dn.rmsd.fel2 <- dn.ds.sum %>% filter(type == "bias", method == "FEL2", bl >= 0.0
 plot_grid(dn.r.fel2 , dn.rmsd.fel2, nrow=2)
 
 
+##########################################################################################
+sig_colors <- c("grey60", "black")
+comp.order <- c("FUBAR1 - SLAC1", "FEL1 - SLAC1", "FEL1 - FUBAR1", "SLAC1 - SLAC2", "FUBAR1 - FUBAR2", "FEL1 - FEL2")
+theme_set(theme_cowplot() + theme(axis.title = element_text(size=15), 
+                                  panel.border = element_rect(size = 0.5), 
+                                  panel.margin = unit(0.75, "lines"), 
+                                  strip.background = element_rect(fill="white"), 
+                                  strip.text = element_text(size=12)))
+
+
+linmodels <- read.csv("linear_model_results_correlation.csv") # Note that this file was manually created generated using information found in the file "build_linear_models.R"
+linmodels2 <- linmodels %>% filter(comp %in% comp.order, type %in% c("nobias", "bias2"))
+linmodels2$comp <- factor(linmodels2$comp, levels = comp.order)
+linmodels2$type <- factor(linmodels2$type, levels=c("nobias", "bias2"), labels=c("No codon bias", "Codon bias"))
+
+
+linmodels2 %>% arrange(comp) %>% 
+           ggplot(aes(x = coeff, y = comp, color = sig)) + 
+                  geom_point(size=2.5) + 
+                  geom_segment(aes(x=lowerCI,xend=upperCI,y=comp,yend=comp),size=1) + 
+                  geom_vline(xintercept=0, size=0.5) + 
+                  facet_grid(~type) + 
+                  xlab("Average Correlation Difference") + 
+                  ylab("Method Comparison") + 
+                  background_grid() + 
+                  scale_x_continuous(limits=c(-0.05, 0.25)) +  
+                  scale_color_manual(values = sig_colors, name = "", labels = c("NS", "S")) -> linmodel.r
+
+
+linmodels <- read.csv("linear_model_results_rmsd.csv") # Note that this file was manually created generated using information found in the file "build_linear_models.R"
+linmodels2 <- linmodels %>% filter(comp %in% comp.order, type %in% c("nobias", "bias2"))
+linmodels2$comp <- factor(linmodels2$comp, levels = comp.order)
+linmodels2$type <- factor(linmodels2$type, levels=c("nobias", "bias2"), labels=c("No codon bias", "Codon bias"))
+linmodels2 %>% arrange(comp) %>% 
+           ggplot(aes(x = coeff, y = comp, color = sig)) + 
+                  geom_point(size=1.75) + 
+                  geom_segment(aes(x=lowerCI,xend=upperCI,y=comp,yend=comp),size=0.8) + 
+                  geom_vline(xintercept=0, size=0.5) + 
+                  facet_grid(~type) + 
+                  xlab("Average RMSD Difference") + 
+                  ylab("Method Comparison") + 
+                  background_grid() + 
+                  scale_x_continuous(limits=c(-0.15, 0.1)) +  
+                  scale_color_manual(values = sig_colors, name = "", labels = c("NS", "S")) -> linmodel.rmsd
+
 
 
 ##########################################################################################
@@ -87,7 +132,6 @@ fill_colors <- c("red", "orange")
 r    <- realdat.sum %>% filter(truetype == "true2", method %in% c("SLAC1", "SLAC2")) %>% ggplot(aes(x = dataset, fill = method, y = r)) + geom_boxplot() + facet_wrap(~type) + scale_fill_manual(values=fill_colors)
 rmsd <- realdat.sum %>% filter(truetype == "true2", method %in% c("SLAC1", "SLAC2")) %>% ggplot(aes(x = dataset, fill = method, y = rmsd)) + geom_boxplot() + facet_wrap(~type) + scale_fill_manual(values=fill_colors)
 real.r.rmsd <- plot_grid(r,rmsd, nrow=2)
-
 
 
 

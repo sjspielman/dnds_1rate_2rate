@@ -1,299 +1,150 @@
 # SJS
-# This script builds mixed effects linear models to determine relative accuracy of models
+# This script builds mixed effects linear models to determine relative accuracy of models/methods
+# NOTE: Condition BL=0.0025 is excluded from linear models since most results are meaningless at that low of a divergence level.
+
 
 require(dplyr)
 require(lme4)
 require(multcomp)
 require(readr)
 
+
+# x is glht object
+extract_multcomp <- function(x, type)
+{
+    confsum <- confint(summary(x))$confint
+    testnames <- names(summary(x)$test$tstat)
+    dat <- data.frame("comp"    = character(), 
+                      "coeff"   = numeric(),
+                      "lowerCI" = numeric(),
+                      "upperCI" = numeric(),
+                      "pvalue"  = numeric(),
+                      "sig"     = character())
+    for (i in 1:length(testnames)){
+        #print(i)
+        comp <- testnames[i]
+        swap <- TRUE
+        
+        # One-rate must come first
+        backwards <- grep("[A-Z]+2 - [A-Z]+1", comp) # 1rate before 2rate
+        if (length(backwards) == 1)
+        {
+            comp <- gsub("([A-Z]+2) - ([A-Z]+1)", "\\2 - \\1", comp)
+            swap <- TRUE
+        }
+
+        # SLAC must come second
+        bad_order1 <- grep("SLAC[12] - F[A-Z]+[12]", comp)
+        if (length(bad_order1) == 1)
+        {
+            comp <- gsub("(SLAC[12]) - ([A-Z]+[12])", "\\2 - \\1", comp)
+            swap <- TRUE
+        }
+        
+        # FEL must come first
+        bad_order2<- grep("[A-Z]+1 - FEL1", comp)
+        if (length(bad_order2) == 1)
+        {
+            comp <- gsub("([A-Z]+[12]) - (FEL[12])", "\\2 - \\1", comp)
+            swap <- TRUE
+        }
+
+            
+         
+        coeff <- confsum[i]
+        pvalue <- summary(confint(x))$test$pvalues[i]
+        if (pvalue < 0.01){
+            sig <- TRUE
+        }
+        else{
+            sig <- FALSE
+        }
+        if (swap){
+            coeff <- coeff * -1
+            lowerCI <- confsum[i,3] * -1
+            upperCI <- confsum[i,2] * -1
+        }
+        else{
+            upperCI <- confsum[i,3]
+            lowerCI <- confsum[i,2]
+        }
+        
+        temp <- data.frame("comp" = comp, "coeff" = coeff, "lowerCI" = lowerCI, "upperCI" = upperCI, "pvalue" = pvalue, "sig" = sig)
+        dat <- rbind(dat, temp)
+    }
+    dat$type <- type
+    dat
+}
+      
+
 dat.sum <- read_csv("dnds_summary.csv")
 
-nobias <- dat.sum %>% na.omit() %>% filter(type == "nobias") %>% filter(bl >= 0.01, ntaxa <= 1024)
+nobias <- dat.sum %>% na.omit() %>% filter(type == "nobias") # %>% filter(bl >= 0.01, ntaxa <= 1024)
 nobias$method <- factor(nobias$method)
-bias <- dat.sum %>% na.omit() %>% filter(type == "bias")    %>% filter(bl >= 0.01, ntaxa <= 1024)
+bias <- dat.sum %>% na.omit() %>% filter(type == "bias")    # %>% filter(bl >= 0.01, ntaxa <= 1024)
 bias$method <- factor(bias$method)
 
-nobias %>% filter(truetype == "true1") -> nobias.true1
-bias %>% filter(truetype == "true1") -> bias.true1
-bias %>% filter(truetype == "true2") -> bias.true2
 
 
-##################################################################################
-############################### True1 Linear Models ##############################
-##################################################################################
+##################### Correlation linear models #######################
+# NOTE: BL = 0.0025 excluded since results are largely meaningless at this low of a divergence level
+
+nobias %>% filter(truetype == "true1", bl >= 0.01) -> nobias.true1
+bias %>% filter(truetype == "true1", bl >= 0.01) -> bias.true1
+bias %>% filter(truetype == "true2", bl >= 0.01) -> bias.true2
+
+r.fits <- data.frame("comp"    = character(), 
+                  "coeff"   = numeric(),
+                  "lowerCI" = numeric(),
+                  "upperCI" = numeric(),
+                  "pvalue"  = numeric(),
+                  "sig"     = character())
 
 
 fit.nobias <- lmer(r ~ method + (1|ntaxa:bl) + (1|rep), data = nobias.true1)
 fit.nobias.mc <- glht(fit.nobias, linfct=mcp(method='Tukey'))
-summary(fit.nobias.mc) # p-values
-# Linear Hypotheses:
-#                       Estimate Std. Error z value Pr(>|z|)    
-# FEL2 - FEL1 == 0     -0.178480   0.003897 -45.803  < 0.001 ***
-# FUBAR1 - FEL1 == 0   -0.008219   0.003897  -2.109  0.28234    
-# FUBAR2 - FEL1 == 0   -0.070144   0.003897 -18.001  < 0.001 ***
-# SLAC1 - FEL1 == 0    -0.013063   0.003897  -3.352  0.01038 *  
-# SLAC2 - FEL1 == 0    -0.085430   0.003897 -21.919  < 0.001 ***
-# FUBAR1 - FEL2 == 0    0.170261   0.003897  43.694  < 0.001 ***
-# FUBAR2 - FEL2 == 0    0.108336   0.003897  27.802  < 0.001 ***
-# SLAC1 - FEL2 == 0     0.165417   0.003897  42.451  < 0.001 ***
-# SLAC2 - FEL2 == 0     0.093050   0.003897  23.875  < 0.001 ***
-# FUBAR2 - FUBAR1 == 0 -0.061925   0.003897 -15.892  < 0.001 ***
-# SLAC1 - FUBAR1 == 0  -0.004844   0.003897  -1.243  0.81553    
-# SLAC2 - FUBAR1 == 0  -0.077211   0.003897 -19.811  < 0.001 ***
-# SLAC1 - FUBAR2 == 0   0.057081   0.003897  14.649  < 0.001 ***
-# SLAC2 - FUBAR2 == 0  -0.015286   0.003897  -3.922  0.00127 ** 
-# SLAC2 - SLAC1 == 0   -0.072367   0.003897 -18.568  < 0.001 ***
-
-
-confint(fit.nobias.mc) # 95% CI
-#Linear Hypotheses:
-#                      Estimate  lwr       upr      
-# FEL2 - FEL1 == 0     -0.178480 -0.189583 -0.167377
-# FUBAR1 - FEL1 == 0   -0.008219 -0.019321  0.002884
-# FUBAR2 - FEL1 == 0   -0.070144 -0.081246 -0.059041
-# SLAC1 - FEL1 == 0    -0.013063 -0.024166 -0.001960
-# SLAC2 - FEL1 == 0    -0.085430 -0.096535 -0.074325
-# FUBAR1 - FEL2 == 0    0.170261  0.159159  0.181364
-# FUBAR2 - FEL2 == 0    0.108336  0.097234  0.119439
-# SLAC1 - FEL2 == 0     0.165417  0.154314  0.176520
-# SLAC2 - FEL2 == 0     0.093050  0.081945  0.104155
-# FUBAR2 - FUBAR1 == 0 -0.061925 -0.073028 -0.050822
-# SLAC1 - FUBAR1 == 0  -0.004844 -0.015947  0.006259
-# SLAC2 - FUBAR1 == 0  -0.077211 -0.088316 -0.066106
-# SLAC1 - FUBAR2 == 0   0.057081  0.045978  0.068183
-# SLAC2 - FUBAR2 == 0  -0.015286 -0.026391 -0.004181
-# SLAC2 - SLAC1 == 0   -0.072367 -0.083472 -0.061262
-
+r.fits <- rbind(r.fits, extract_multcomp(fit.nobias.mc, "nobias"))
 
 fit.bias1 <- lmer(r ~ method + (1|ntaxa:bl) + (1|rep), data = bias.true1)
 fit.bias1.mc <- glht(fit.bias1, linfct=mcp(method='Tukey'))
-summary(fit.bias1.mc)
-# Linear Hypotheses:
-#                       Estimate Std. Error z value Pr(>|z|)    
-# FEL2 - FEL1 == 0     -0.276581   0.004208 -65.735  < 1e-04 ***
-# FUBAR1 - FEL1 == 0   -0.010298   0.004208  -2.447  0.14023    
-# FUBAR2 - FEL1 == 0   -0.177999   0.004208 -42.305  < 1e-04 ***
-# SLAC1 - FEL1 == 0     0.016362   0.004208   3.889  0.00143 ** 
-# SLAC2 - FEL1 == 0    -0.119269   0.004213 -28.312  < 1e-04 ***
-# FUBAR1 - FEL2 == 0    0.266283   0.004208  63.287  < 1e-04 ***
-# FUBAR2 - FEL2 == 0    0.098582   0.004208  23.430  < 1e-04 ***
-# SLAC1 - FEL2 == 0     0.292943   0.004208  69.624  < 1e-04 ***
-# SLAC2 - FEL2 == 0     0.157311   0.004213  37.342  < 1e-04 ***
-# FUBAR2 - FUBAR1 == 0 -0.167701   0.004208 -39.857  < 1e-04 ***
-# SLAC1 - FUBAR1 == 0   0.026660   0.004208   6.336  < 1e-04 ***
-# SLAC2 - FUBAR1 == 0  -0.108971   0.004213 -25.867  < 1e-04 ***
-# SLAC1 - FUBAR2 == 0   0.194361   0.004208  46.194  < 1e-04 ***
-# SLAC2 - FUBAR2 == 0   0.058729   0.004213  13.941  < 1e-04 ***
-# SLAC2 - SLAC1 == 0   -0.135631   0.004213 -32.196  < 1e-04 ***
+r.fits <- rbind(r.fits, extract_multcomp(fit.bias1.mc, "bias1"))
 
-confint(fit.bias1.mc)
-# Linear Hypotheses:
-#                      Estimate  lwr       upr      
-# FEL2 - FEL1 == 0     -0.276581 -0.288567 -0.264595
-# FUBAR1 - FEL1 == 0   -0.010298 -0.022284  0.001688
-# FUBAR2 - FEL1 == 0   -0.177999 -0.189985 -0.166013
-# SLAC1 - FEL1 == 0     0.016362  0.004376  0.028348
-# SLAC2 - FEL1 == 0    -0.119269 -0.131270 -0.107268
-# FUBAR1 - FEL2 == 0    0.266283  0.254297  0.278269
-# FUBAR2 - FEL2 == 0    0.098582  0.086596  0.110568
-# SLAC1 - FEL2 == 0     0.292943  0.280957  0.304929
-# SLAC2 - FEL2 == 0     0.157311  0.145311  0.169312
-# FUBAR2 - FUBAR1 == 0 -0.167701 -0.179687 -0.155715
-# SLAC1 - FUBAR1 == 0   0.026660  0.014674  0.038646
-# SLAC2 - FUBAR1 == 0  -0.108971 -0.120972 -0.096971
-# SLAC1 - FUBAR2 == 0   0.194361  0.182375  0.206347
-# SLAC2 - FUBAR2 == 0   0.058729  0.046729  0.070730
-# SLAC2 - SLAC1 == 0   -0.135631 -0.147632 -0.123631
-
-
-
-##################################################################################
-############################### True2 Linear Models ##############################
-##################################################################################
-
-
-
-
-
-fit.bias2 <- lmer(r ~ method + (1|ntaxa:bl) + (1|rep), data = bias)
+fit.bias2 <- lmer(r ~ method + (1|ntaxa:bl) + (1|rep), data = bias.true2)
 fit.bias2.mc <- glht(fit.bias2, linfct=mcp(method='Tukey'))
-summary(fit.bias2.mc)
-# Linear Hypotheses:
-#                       Estimate Std. Error z value Pr(>|z|)    
-# FEL2 - FEL1 == 0     -0.244745   0.002914 -83.979  < 1e-04 ***
-# FUBAR1 - FEL1 == 0   -0.012145   0.002914  -4.167 0.000427 ***
-# FUBAR2 - FEL1 == 0   -0.148805   0.002914 -51.059  < 1e-04 ***
-# SLAC1 - FEL1 == 0     0.014444   0.002914   4.956  < 1e-04 ***
-# SLAC2 - FEL1 == 0    -0.089386   0.002918 -30.633  < 1e-04 ***
-# FUBAR1 - FEL2 == 0    0.232600   0.002914  79.811  < 1e-04 ***
-# FUBAR2 - FEL2 == 0    0.095940   0.002914  32.920  < 1e-04 ***
-# SLAC1 - FEL2 == 0     0.259189   0.002914  88.935  < 1e-04 ***
-# SLAC2 - FEL2 == 0     0.155359   0.002918  53.242  < 1e-04 ***
-# FUBAR2 - FUBAR1 == 0 -0.136659   0.002914 -46.891  < 1e-04 ***
-# SLAC1 - FUBAR1 == 0   0.026589   0.002914   9.124  < 1e-04 ***
-# SLAC2 - FUBAR1 == 0  -0.077241   0.002918 -26.471  < 1e-04 ***
-# SLAC1 - FUBAR2 == 0   0.163249   0.002914  56.015  < 1e-04 ***
-# SLAC2 - FUBAR2 == 0   0.059419   0.002918  20.363  < 1e-04 ***
-# SLAC2 - SLAC1 == 0   -0.103830   0.002918 -35.583  < 1e-04 ***
+r.fits <- rbind(r.fits, extract_multcomp(fit.bias2.mc, "bias2"))
 
-
-confint(fit.bias2.mc)
-#Linear Hypotheses:
-#                      Estimate  lwr       upr      
-# FEL2 - FEL1 == 0     -0.244745 -0.253052 -0.236439
-# FUBAR1 - FEL1 == 0   -0.012145 -0.020452 -0.003839
-# FUBAR2 - FEL1 == 0   -0.148805 -0.157111 -0.140499
-# SLAC1 - FEL1 == 0     0.014444  0.006138  0.022750
-# SLAC2 - FEL1 == 0    -0.089386 -0.097703 -0.081070
-# FUBAR1 - FEL2 == 0    0.232600  0.224294  0.240906
-# FUBAR2 - FEL2 == 0    0.095940  0.087634  0.104247
-# SLAC1 - FEL2 == 0     0.259189  0.250883  0.267496
-# SLAC2 - FEL2 == 0     0.155359  0.147043  0.163676
-# FUBAR2 - FUBAR1 == 0 -0.136659 -0.144966 -0.128353
-# SLAC1 - FUBAR1 == 0   0.026589  0.018283  0.034896
-# SLAC2 - FUBAR1 == 0  -0.077241 -0.085557 -0.068924
-# SLAC1 - FUBAR2 == 0   0.163249  0.154943  0.171555
-# SLAC2 - FUBAR2 == 0   0.059419  0.051102  0.067735
-# SLAC2 - SLAC1 == 0   -0.103830 -0.112147 -0.095514
+write.csv(r.fits, "linear_model_results_correlation.csv", quote = F, row.names = F)
 
 
 
+############### RMSD linear models #################
+# NOTE: BL = <0.0025,0.01,0.04> and N = <128,256> excluded since results are largely meaningless at this low of a divergence level
+
+nobias %>% filter(truetype == "true1", bl >= 0.16, ntaxa >= 512) -> nobias.true1
+bias %>% filter(truetype == "true1", bl >= 0.16, ntaxa >= 512) -> bias.true1
+bias %>% filter(truetype == "true2", bl >= 0.16, ntaxa >= 512) -> bias.true2
 
 
 
+rmsd.fits <- data.frame("comp"    = character(), 
+                  "coeff"   = numeric(),
+                  "lowerCI" = numeric(),
+                  "upperCI" = numeric(),
+                  "pvalue"  = numeric(),
+                  "sig"     = character())
 
 
+fit.nobias <- lmer(rmsd ~ method + (1|ntaxa:bl) + (1|rep), data = nobias.true1)
+fit.nobias.mc <- glht(fit.nobias, linfct=mcp(method='Tukey'))
+rmsd.fits <- rbind(rmsd.fits, extract_multcomp(fit.nobias.mc, "nobias"))
 
+fit.bias1 <- lmer(rmsd ~ method + (1|ntaxa:bl) + (1|rep), data = bias.true1)
+fit.bias1.mc <- glht(fit.bias1, linfct=mcp(method='Tukey'))
+rmsd.fits <- rbind(rmsd.fits, extract_multcomp(fit.bias1.mc, "bias1"))
 
+fit.bias2 <- lmer(rmsd ~ method + (1|ntaxa:bl) + (1|rep), data = bias.true2)
+fit.bias2.mc <- glht(fit.bias2, linfct=mcp(method='Tukey'))
+rmsd.fits <- rbind(rmsd.fits, extract_multcomp(fit.bias2.mc, "bias2"))
 
-
-
-
-##################################################################################################
-###### RMSD Tests, for which we only use a subset of conditions due to convergence issues. #######
-##################################################################################################
-
-
-
-
-nobias.true1 %>% filter(ntaxa >= 512 , bl >= 0.16) -> nobias.true1.subset
-bias.true1 %>% filter(ntaxa >= 512, bl >= 0.16)   -> bias.true1.subset
-bias.true2 %>% filter(ntaxa >= 512, bl >= 0.16)   -> bias.true2.subset
-
-
-fit <- lmer(rmsd ~ method + (1|ntaxa:bl) + (1|rep), data = nobias.true1.subset)
-fit.mc <- glht(fit, linfct=mcp(method='Tukey'))
-summary(fit.mc)
-#                        Estimate Std. Error z value Pr(>|z|)    
-# FEL2 - FEL1 == 0      0.0371869  0.0018940  19.634   <1e-06 ***
-# FUBAR1 - FEL1 == 0    0.0009586  0.0018940   0.506    0.996    
-# FUBAR2 - FEL1 == 0    0.0245283  0.0018940  12.951   <1e-06 ***
-# SLAC1 - FEL1 == 0     0.0618781  0.0018940  32.671   <1e-06 ***
-# SLAC2 - FEL1 == 0     0.0932248  0.0018940  49.222   <1e-06 ***
-# FUBAR1 - FEL2 == 0   -0.0362283  0.0018940 -19.128   <1e-06 ***
-# FUBAR2 - FEL2 == 0   -0.0126586  0.0018940  -6.684   <1e-06 ***
-# SLAC1 - FEL2 == 0     0.0246912  0.0018940  13.037   <1e-06 ***
-# SLAC2 - FEL2 == 0     0.0560379  0.0018940  29.587   <1e-06 ***
-# FUBAR2 - FUBAR1 == 0  0.0235697  0.0018940  12.445   <1e-06 ***
-# SLAC1 - FUBAR1 == 0   0.0609195  0.0018940  32.165   <1e-06 ***
-# SLAC2 - FUBAR1 == 0   0.0922663  0.0018940  48.716   <1e-06 ***
-# SLAC1 - FUBAR2 == 0   0.0373498  0.0018940  19.720   <1e-06 ***
-# SLAC2 - FUBAR2 == 0   0.0686965  0.0018940  36.271   <1e-06 ***
-# SLAC2 - SLAC1 == 0    0.0313467  0.0018940  16.551   <1e-06 ***
-confint(fit.mc)
-#                      Estimate   lwr        upr       
-# FEL2 - FEL1 == 0      0.0371869  0.0317897  0.0425841
-# FUBAR1 - FEL1 == 0    0.0009586 -0.0044386  0.0063558
-# FUBAR2 - FEL1 == 0    0.0245283  0.0191311  0.0299255
-# SLAC1 - FEL1 == 0     0.0618781  0.0564809  0.0672753
-# SLAC2 - FEL1 == 0     0.0932248  0.0878276  0.0986220
-# FUBAR1 - FEL2 == 0   -0.0362283 -0.0416255 -0.0308311
-# FUBAR2 - FEL2 == 0   -0.0126586 -0.0180558 -0.0072614
-# SLAC1 - FEL2 == 0     0.0246912  0.0192940  0.0300884
-# SLAC2 - FEL2 == 0     0.0560379  0.0506407  0.0614351
-# FUBAR2 - FUBAR1 == 0  0.0235697  0.0181725  0.0289669
-# SLAC1 - FUBAR1 == 0   0.0609195  0.0555223  0.0663167
-# SLAC2 - FUBAR1 == 0   0.0922663  0.0868691  0.0976634
-# SLAC1 - FUBAR2 == 0   0.0373498  0.0319526  0.0427470
-# SLAC2 - FUBAR2 == 0   0.0686965  0.0632993  0.0740937
-# SLAC2 - SLAC1 == 0    0.0313467  0.0259495  0.0367439
-
-
-fit <- lmer(rmsd ~ method + (1|ntaxa:bl) + (1|rep), data = bias.true1.subset)
-fit.mc <- glht(fit, linfct=mcp(method='Tukey'))
-summary(fit.mc)
-#                       Estimate Std. Error z value Pr(>|z|)    
-# FEL2 - FEL1 == 0      0.187190   0.004837  38.701   <0.001 ***
-# FUBAR1 - FEL1 == 0   -0.009927   0.004837  -2.052    0.313    
-# FUBAR2 - FEL1 == 0    0.143336   0.004837  29.635   <0.001 ***
-# SLAC1 - FEL1 == 0     0.012011   0.004837   2.483    0.129    
-# SLAC2 - FEL1 == 0     0.132846   0.004837  27.466   <0.001 ***
-# FUBAR1 - FEL2 == 0   -0.197117   0.004837 -40.754   <0.001 ***
-# FUBAR2 - FEL2 == 0   -0.043854   0.004837  -9.067   <0.001 ***
-# SLAC1 - FEL2 == 0    -0.175179   0.004837 -36.218   <0.001 ***
-# SLAC2 - FEL2 == 0    -0.054344   0.004837 -11.236   <0.001 ***
-# FUBAR2 - FUBAR1 == 0  0.153263   0.004837  31.687   <0.001 ***
-# SLAC1 - FUBAR1 == 0   0.021938   0.004837   4.536   <0.001 ***
-# SLAC2 - FUBAR1 == 0   0.142773   0.004837  29.518   <0.001 ***
-# SLAC1 - FUBAR2 == 0  -0.131325   0.004837 -27.151   <0.001 ***
-# SLAC2 - FUBAR2 == 0  -0.010490   0.004837  -2.169    0.252    
-# SLAC2 - SLAC1 == 0    0.120835   0.004837  24.983   <0.001 ***
-confint(fit.mc)
-# Linear Hypotheses:
-#                      Estimate  lwr       upr      
-# FEL2 - FEL1 == 0      0.187190  0.173403  0.200976
-# FUBAR1 - FEL1 == 0   -0.009927 -0.023714  0.003859
-# FUBAR2 - FEL1 == 0    0.143336  0.129550  0.157122
-# SLAC1 - FEL1 == 0     0.012011 -0.001776  0.025797
-# SLAC2 - FEL1 == 0     0.132846  0.119060  0.146632
-# FUBAR1 - FEL2 == 0   -0.197117 -0.210903 -0.183331
-# FUBAR2 - FEL2 == 0   -0.043854 -0.057640 -0.030068
-# SLAC1 - FEL2 == 0    -0.175179 -0.188965 -0.161393
-# SLAC2 - FEL2 == 0    -0.054344 -0.068130 -0.040558
-# FUBAR2 - FUBAR1 == 0  0.153263  0.139477  0.167050
-# SLAC1 - FUBAR1 == 0   0.021938  0.008152  0.035724
-# SLAC2 - FUBAR1 == 0   0.142773  0.128987  0.156560
-# SLAC1 - FUBAR2 == 0  -0.131325 -0.145111 -0.117539
-# SLAC2 - FUBAR2 == 0  -0.010490 -0.024276  0.003296
-# SLAC2 - SLAC1 == 0    0.120835  0.107049  0.134622
-
-
-
-fit <- lmer(rmsd ~ method + (1|ntaxa:bl) + (1|rep), data = bias.true2.subset)
-fit.mc <- glht(fit, linfct=mcp(method='Tukey'))
-summary(fit.mc)
-#                       Estimate Std. Error z value Pr(>|z|)    
-# FEL2 - FEL1 == 0      0.12341    0.00511  24.152   <0.001 ***
-# FUBAR1 - FEL1 == 0   -0.01681    0.00511  -3.289   0.0128 *  
-# FUBAR2 - FEL1 == 0    0.08442    0.00511  16.522   <0.001 ***
-# SLAC1 - FEL1 == 0     0.00658    0.00511   1.288   0.7920    
-# SLAC2 - FEL1 == 0     0.06969    0.00511  13.639   <0.001 ***
-# FUBAR1 - FEL2 == 0   -0.14022    0.00511 -27.441   <0.001 ***
-# FUBAR2 - FEL2 == 0   -0.03899    0.00511  -7.630   <0.001 ***
-# SLAC1 - FEL2 == 0    -0.11683    0.00511 -22.864   <0.001 ***
-# SLAC2 - FEL2 == 0    -0.05372    0.00511 -10.513   <0.001 ***
-# FUBAR2 - FUBAR1 == 0  0.10123    0.00511  19.811   <0.001 ***
-# SLAC1 - FUBAR1 == 0   0.02339    0.00511   4.577   <0.001 ***
-# SLAC2 - FUBAR1 == 0   0.08650    0.00511  16.928   <0.001 ***
-# SLAC1 - FUBAR2 == 0  -0.07784    0.00511 -15.234   <0.001 ***
-# SLAC2 - FUBAR2 == 0  -0.01473    0.00511  -2.883   0.0454 *  
-# SLAC2 - SLAC1 == 0    0.06311    0.00511  12.351   <0.001 ***
-confint(fit.mc)
-# Linear Hypotheses:
-#                      Estimate   lwr        upr       
-# FEL2 - FEL1 == 0      0.1234087  0.1088473  0.1379702
-# FUBAR1 - FEL1 == 0   -0.0168077 -0.0313691 -0.0022462
-# FUBAR2 - FEL1 == 0    0.0844232  0.0698618  0.0989846
-# SLAC1 - FEL1 == 0     0.0065795 -0.0079819  0.0211409
-# SLAC2 - FEL1 == 0     0.0696899  0.0551285  0.0842513
-# FUBAR1 - FEL2 == 0   -0.1402164 -0.1547778 -0.1256550
-# FUBAR2 - FEL2 == 0   -0.0389855 -0.0535469 -0.0244241
-# SLAC1 - FEL2 == 0    -0.1168292 -0.1313907 -0.1022678
-# SLAC2 - FEL2 == 0    -0.0537188 -0.0682803 -0.0391574
-# FUBAR2 - FUBAR1 == 0  0.1012309  0.0866695  0.1157923
-# SLAC1 - FUBAR1 == 0   0.0233872  0.0088258  0.0379486
-# SLAC2 - FUBAR1 == 0   0.0864976  0.0719361  0.1010590
-# SLAC1 - FUBAR2 == 0  -0.0778437 -0.0924051 -0.0632823
-# SLAC2 - FUBAR2 == 0  -0.0147333 -0.0292947 -0.0001719
-# SLAC2 - SLAC1 == 0    0.0631104  0.0485490  0.0776718
+write.csv(rmsd.fits, "linear_model_results_rmsd.csv", quote = F, row.names = F)
 
