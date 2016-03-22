@@ -73,7 +73,7 @@ clean_dnds_fel2 <- function(df.fel, numcol)
 } 
 
 
-RESULTDIR <- "../results_realtrees/"
+RESULTDIR <- "../results/results_realtrees/"
 TRUEDIR <- "../simulation/"
 numcol <- 100
 datasets <- c("amine", "h3", "camelid", "vertrho", "hivrt")

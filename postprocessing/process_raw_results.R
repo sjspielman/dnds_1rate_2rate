@@ -73,7 +73,7 @@ clean_dnds_fel2 <- function(df.fel, numcol)
 } 
 
 
-RESULTDIR <- "../results/"
+RESULTDIR <- "../results/balancedtrees_results/"
 TRUEDIR <- "../simulation/"
 numcol <- 100
 ntaxa <- 7:11
@@ -119,11 +119,11 @@ for (type in types){
             for (repl in 1:nreps){
 
                 # Read in raw results
-                fel1   <- read.csv(paste(RESULTDIR, "raw_results/rep", repl, "_n", n, "_bl", bl, "_", type, "_FEL1_GTR.txt", sep=""))        
-                fel2   <- read.csv(paste(RESULTDIR, "raw_results/rep", repl, "_n", n, "_bl", bl, "_", type, "_FEL2_GTR.txt", sep=""))        
-                slac   <- read.table(paste(RESULTDIR, "raw_results/rep", repl, "_n", n, "_bl", bl, "_", type, "_SLAC_GTR.txt", sep=""), header=T)
-                fubar1 <- read.csv(paste(RESULTDIR, "raw_results/rep", repl, "_n", n, "_bl", bl, "_", type, "_FUBAR1.txt", sep=""))
-                fubar2 <- read.csv(paste(RESULTDIR, "raw_results/rep", repl, "_n", n, "_bl", bl, "_", type, "_FUBAR2.txt", sep=""))
+                fel1   <- read.csv(paste(RESULTDIR, "rep", repl, "_n", n, "_bl", bl, "_", type, "_FEL1_GTR.txt", sep=""))        
+                fel2   <- read.csv(paste(RESULTDIR, "rep", repl, "_n", n, "_bl", bl, "_", type, "_FEL2_GTR.txt", sep=""))        
+                slac   <- read.table(paste(RESULTDIR, "rep", repl, "_n", n, "_bl", bl, "_", type, "_SLAC_GTR.txt", sep=""), header=T)
+                fubar1 <- read.csv(paste(RESULTDIR, "rep", repl, "_n", n, "_bl", bl, "_", type, "_FUBAR1.txt", sep=""))
+                fubar2 <- read.csv(paste(RESULTDIR, "rep", repl, "_n", n, "_bl", bl, "_", type, "_FUBAR2.txt", sep=""))
                 
                 # Clean up dN/dS values to replace uninformative with NA
                 fel1_w = clean_dnds_fel1(fel1, numcol)
@@ -155,7 +155,7 @@ for (type in types){
     }
 
     # Save full dataset
-    write_csv(df.results, paste0(RESULTDIR, "processed_results/full_results_", type, "_dataset.csv"))
+    write_csv(df.results, full_results_", type, "_dataset.csv")
 }
 
 
