@@ -63,6 +63,13 @@ plot_grid(dn.r.fel2 , dn.rmsd.fel2, nrow=2)
 
 
 
+
+##########################################################################################
+gtr.bias.count <- read.csv("gtr_bias_count.csv")
+gtr.bias.count %>% group_by(ntaxa, bl, rep) %>% mutate(ratio_ns = ncount/scount) %>% na.omit() %>% filter(!is.infinite(ratio_ns)) %>% summarize(mean_ratio = mean(ratio_ns))  -> ns_count_ratio
+count.ratio.box <- ggplot(ns_count_ratio, aes(x = as.factor(bl), y = mean_ratio, fill = as.factor(ntaxa))) + geom_boxplot(outlier.size = 0.75) + geom_hline(yintercept=1) + scale_fill_brewer(palette = "YlOrRd", name = "Number of Taxa") + xlab("Branch Length") + ylab("Mean N:S count ratio")
+
+
 ##########################################################################################
 source("summarize_results.R")
 realdat <- read.csv("full_results_realtrees.csv")
@@ -80,6 +87,7 @@ fill_colors <- c("red", "orange")
 r    <- realdat.sum %>% filter(truetype == "true2", method %in% c("SLAC1", "SLAC2")) %>% ggplot(aes(x = dataset, fill = method, y = r)) + geom_boxplot() + facet_wrap(~type) + scale_fill_manual(values=fill_colors)
 rmsd <- realdat.sum %>% filter(truetype == "true2", method %in% c("SLAC1", "SLAC2")) %>% ggplot(aes(x = dataset, fill = method, y = rmsd)) + geom_boxplot() + facet_wrap(~type) + scale_fill_manual(values=fill_colors)
 real.r.rmsd <- plot_grid(r,rmsd, nrow=2)
+
 
 
 
