@@ -5,6 +5,7 @@
 import numpy as np
 import csv
 from dnds_mutsel_functions import *
+from compute_dnds_from_mutsel import *
 ZERO = 1e-8
 
 # Import regular frequencies and lambda values
@@ -25,22 +26,44 @@ pi_g = 0.18
 gtr_rates = [ 1.64390601,  1.27668478,  0.795571  ,  0.44377381,  0.32759197,  0.25651819]
 mu_dict = {'AG':gtr_rates[0]*pi_g, 'GA':gtr_rates[0]*pi_a, 'CT':gtr_rates[1]*pi_t, 'TC':gtr_rates[1]*pi_c, 'AC':gtr_rates[2]*pi_c, 'CA':gtr_rates[2]*pi_a, 'TG':gtr_rates[3]*pi_g, 'GT':gtr_rates[3]*pi_t, 'AT':gtr_rates[4]*pi_t, 'TA':gtr_rates[4]*pi_a, 'GC':gtr_rates[5]*pi_c, 'CG':gtr_rates[5]*pi_g}
 
+nobias_freqs = []
+bias_freqs   = []
+bias_term    = []
 
+unbiased_freqfile = "codon_freq_lib_nobias.txt"
+gtr_freqfile      = "codon_freq_lib_gtr2.txt"
+bias_gtr_freqfile = "codon_freq_lib_bias_gtr2.txt"
+bias_term_file    = "codonbias_gtr_term2.txt" 
 
-gtr_codon_freqs = []
+unbiased_freqs = np.loadtxt(unbiased_freqfile)
 for raw_freqs in raw_codon_freqs:
     
-    # Determine codon fitness values
-    codon_fit = np.log(raw_freqs)
+    # Determine original codon fitness values [see Sella Hirsh (2005) PNAS for]
+    codon_fit = np.log(raw_freqs)   # Original frequencies used HKY, and as such fitness and frequencies are directly related in this way.
+
     
-    # Extract equilibrium frequencies
+    # No bias
     matrix = build_mutsel_matrix(mu_dict, codon_fit)
     cf = get_eq_from_eig(matrix) 
     assert( abs(np.sum(cf) - 1.) < ZERO ), "codon frequencies do not sum to 1" 
-    gtr_codon_freqs.append(cf)
+    nobias_freqs.append( cf )
     
-np.savetxt(gtr_freqfile, np.array(gtr_codon_freqs))
+    # Bias
+    b = np.random.uniform(1.3, 1.5) # Preferred codon should have a fitness between 50-100% greater than non-preferred
+    codon_fit_bias = add_bias_to_fitness(codon_fit, b)
+    matrix = build_mutsel_matrix(mu_dict, codon_fit_bias)
+    cf = get_eq_from_eig(matrix) 
+    assert( abs(np.sum(cf) - 1.) < ZERO ), "codon frequencies do not sum to 1" 
+    bias_freqs.append( cf )
+    bias_term.append( b )
 
+    
+np.savetxt(gtr_freqfile, np.array(nobias_freqs))
+np.savetxt(bias_gtr_freqfile, np.array(bias_freqs))
+with open(bias_term_file, "w") as f:
+    f.write("site,biasterm\n")
+    for x in bias_term:
+        f.write(str(x+1) + "," + str(bias_term) + "\n")
     
     
     

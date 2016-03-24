@@ -31,13 +31,12 @@ for type in types:
         dn[i] = m.compute_dn()
         ds[i] = m.compute_ds()
 
-    dnds_2rate = dn / ds
-    dnds_1rate = dn / np.mean(ds)
+    dnds = dn / ds
 
 
     with open(dndsfile, "w") as f:
-        f.write("site\tdnds2\tdnds1\tdn\tds\n")
+        f.write("site\tdnds2\tdn\tds\n")
         for i in range(len(dnds_2rate)):
-            f.write(str(i+1) + "\t" + str(dnds_2rate[i]) + "\t" + str(dnds_1rate[i]) + "\t" + str(dn[i]) + "\t" + str(ds[i]) + "\n")
+            f.write(str(i+1) + "\t" + str(dnds_2rate[i]) + "\t" + str(dn[i]) + "\t" + str(ds[i]) + "\n")
 
 

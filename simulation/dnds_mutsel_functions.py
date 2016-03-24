@@ -4,6 +4,7 @@ import re
 import numpy as np
 from scipy import linalg
 import sys
+from copy import deepcopy
 from random import uniform, shuffle
 amino_acids  = ["A", "C", "D", "E", "F", "G", "H", "I", "K", "L", "M", "N", "P", "Q", "R", "S", "T", "V", "W", "Y"]
 codons=["AAA", "AAC", "AAG", "AAT", "ACA", "ACC", "ACG", "ACT", "AGA", "AGC", "AGG", "AGT", "ATA", "ATC", "ATG", "ATT", "CAA", "CAC", "CAG", "CAT", "CCA", "CCC", "CCG", "CCT", "CGA", "CGC", "CGG", "CGT", "CTA", "CTC", "CTG", "CTT", "GAA", "GAC", "GAG", "GAT", "GCA", "GCC", "GCG", "GCT", "GGA", "GGC", "GGG", "GGT", "GTA", "GTC", "GTG", "GTT", "TAC", "TAT", "TCA", "TCC", "TCG", "TCT", "TGC", "TGG", "TGT", "TTA", "TTC", "TTG", "TTT"]
@@ -27,6 +28,35 @@ def codon_fitness_to_freqs(codon_fitness):
     assert( abs(1. - np.sum(codon_freqs)) <= ZERO), "codon_freq doesn't sum to 1 in codon_fitness_to_freqs"
     return codon_freqs 
 
+
+
+def add_bias_to_fitness(rawfitness, bias):
+    '''
+        Derive new fitness values which incorporate codon bias.
+    '''
+    new_fitness = np.zeros(61)
+    
+    for i in range(len(genetic_code)):
+        # Determine the new preferred, non-preferred frequencies
+        family = genetic_code[i]
+        aa_fit = rawfitness[ codons.index(genetic_code[i][0]) ]
+        k = len(family) - 1.
+          
+        nonpref = abs(aa_fit) * bias * -1 # Reduce fitness by 50-100%
+        pref = deepcopy(aa_fit)
+        
+        # Assign randomly
+        indices = [codons.index(x) for x in family]
+        shuffle(indices)
+        first = True
+        for ind in indices:
+            if first:
+                new_fitness[ind] = pref
+                first=False
+            else:
+                new_fitness[ind] = nonpref
+    
+    return new_fitness
 
 
 
