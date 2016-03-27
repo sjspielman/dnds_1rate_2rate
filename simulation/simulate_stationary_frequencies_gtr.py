@@ -31,15 +31,15 @@ bias_freqs   = []
 bias_term    = []
 
 unbiased_freqfile = "codon_freq_lib_nobias.txt"
-gtr_freqfile      = "codon_freq_lib_gtr2.txt"
-bias_gtr_freqfile = "codon_freq_lib_bias_gtr2.txt"
-bias_term_file    = "codonbias_gtr_term2.txt" 
+gtr_freqfile      = "codon_freq_lib_gtr.txt"
+bias_gtr_freqfile = "codon_freq_lib_bias_gtr.txt"
+bias_term_file    = "codonbias_gtr_term.txt" 
 
 unbiased_freqs = np.loadtxt(unbiased_freqfile)
 for raw_freqs in raw_codon_freqs:
     
     # Determine original codon fitness values [see Sella Hirsh (2005) PNAS for]
-    codon_fit = np.log(raw_freqs)   # Original frequencies used HKY, and as such fitness and frequencies are directly related in this way.
+    codon_fit = np.log(raw_freqs)   # Original frequencies used HKY, and as such fitness and frequencies are directly related in this way. We use these fitness values to compute bias frequencies/fitnesses
 
     
     # No bias
@@ -49,7 +49,7 @@ for raw_freqs in raw_codon_freqs:
     nobias_freqs.append( cf )
     
     # Bias
-    b = np.random.uniform(1.3, 1.5) # Preferred codon should have a fitness between 50-100% greater than non-preferred
+    b = np.random.uniform(1.3, 1.5) # Preferred codon will have a fitness between 30-50% greater than non-preferred
     codon_fit_bias = add_bias_to_fitness(codon_fit, b)
     matrix = build_mutsel_matrix(mu_dict, codon_fit_bias)
     cf = get_eq_from_eig(matrix) 
@@ -62,8 +62,8 @@ np.savetxt(gtr_freqfile, np.array(nobias_freqs))
 np.savetxt(bias_gtr_freqfile, np.array(bias_freqs))
 with open(bias_term_file, "w") as f:
     f.write("site,biasterm\n")
-    for x in bias_term:
-        f.write(str(x+1) + "," + str(bias_term) + "\n")
+    for x in range(len(bias_term)):
+        f.write(str(x+1) + "," + str(bias_term[x]) + "\n")
     
     
     
