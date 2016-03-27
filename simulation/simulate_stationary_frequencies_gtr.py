@@ -8,13 +8,6 @@ from dnds_mutsel_functions import *
 from compute_dnds_from_mutsel import *
 ZERO = 1e-8
 
-# Import regular frequencies and lambda values
-raw_freqfile = "codon_freq_lib_nobias.txt"
-raw_codon_freqs = np.loadtxt(raw_freqfile)
-
-# Output file names
-gtr_freqfile = "codon_freq_lib_gtr.txt"
-
 # The GTR rates were derived with the following code:
 #### gtr_rates =  np.sort( np.random.gamma(1., 1.5, 6))
 #### gtr_rates = gtr_rates[::-1] # This way largest are first, as transitions are first in the dictionary.
@@ -30,13 +23,13 @@ nobias_freqs = []
 bias_freqs   = []
 bias_term    = []
 
-unbiased_freqfile = "codon_freq_lib_nobias.txt"
-gtr_freqfile      = "codon_freq_lib_gtr.txt"
-bias_gtr_freqfile = "codon_freq_lib_bias_gtr.txt"
-bias_term_file    = "codonbias_gtr_term.txt" 
+unbiased_freqfile = "codon_freq_lib_hkynobias.txt"
+gtr_freqfile      = "codon_freq_lib_gtrnobias.txt"
+bias_gtr_freqfile = "codon_freq_lib_gtrbias.txt"
+bias_term_file    = "gtrbias_term.csv" 
 
 unbiased_freqs = np.loadtxt(unbiased_freqfile)
-for raw_freqs in raw_codon_freqs:
+for raw_freqs in unbiased_freqs:
     
     # Determine original codon fitness values [see Sella Hirsh (2005) PNAS for]
     codon_fit = np.log(raw_freqs)   # Original frequencies used HKY, and as such fitness and frequencies are directly related in this way. We use these fitness values to compute bias frequencies/fitnesses

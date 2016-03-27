@@ -36,8 +36,8 @@ freqs  = []
 lambdas = []
 
 # Simulate
-freqfile = "../../results/codon_freq_lib_nobias.txt"
-lambdafile = "../../results/nobias_lambda.txt" # To save the exponents used to compute frequency vectors
+freqfile   = "codon_freq_lib_hkynobias.txt"
+lambdafile = "hkynobias_lambda.csv" # To save the exponents used to compute frequency vectors
 
 total = 0.
 for i in range(n):
@@ -68,7 +68,7 @@ lambdas.append(lambda_)
 # Save all
 np.savetxt(freqfile, np.array(freqs))
 with open(lambdafile, "w") as outf:
-    outf.write("site\tlambda\n")
+    outf.write("site,lambda\n")
     for i in range(len(dnds)):
-        outf.write(str(i + 1) + "\t" + str(lambdas[i]) + "\n")
+        outf.write(str(i + 1) + "," + str(lambdas[i]) + "\n")
 

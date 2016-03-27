@@ -18,9 +18,9 @@ mu_dict = {'AT': mu, 'TA':mu, 'CG': mu, 'GC':mu, 'AC': mu, 'CA':mu, 'GT':mu, 'TG
 freqs   = []
 bias    = []
 
-unbiased_freqs = np.loadtxt("../../results/codon_freq_lib.txt")
-freqfile = "../../results/codon_freq_lib_bias.txt"
-biasfile = "../../results/codonbias_term.txt" # To save the bias "factors" 
+unbiased_freqs = np.loadtxt("../../results/codon_freq_lib_hkynobias.txt")
+freqfile = "../../results/codon_freq_lib_hkybias.txt"
+biasfile = "../../results/hkybias_term.csv" # To save the bias "factors" 
 
 rep = 0
 for rawfreqs in unbiased_freqs:
@@ -38,7 +38,7 @@ for rawfreqs in unbiased_freqs:
 # Save all
 np.savetxt(freqfile, np.array(freqs))
 with open(biasfile, "w") as outf:
-    outf.write("site\tbias_term\n")
+    outf.write("site,bias_term\n")
     for i in range(len(bias)):
-        outf.write(str(i + 1) + "\t" + str(bias[i]) + "\n")
+        outf.write(str(i + 1) + "," + str(bias[i]) + "\n")
 
