@@ -166,16 +166,17 @@ theme_set(theme_cowplot() + theme(axis.text = element_text(size=13),
                                   axis.title = element_text(size=14)))
 
 
-gtr.bias.count <- read.csv("substitution_counts_bias_gtr.csv")
-gtr.bias.count %>% group_by(ntaxa, bl, rep) %>% mutate(ratio_ns = ncount/scount) %>% na.omit() %>% filter(!is.infinite(ratio_ns)) %>% summarize(mean_ratio = mean(ratio_ns))  -> ns_count_ratio
-count.ratio.box <- ggplot(ns_count_ratio, aes(x = as.factor(bl), y = mean_ratio, fill = as.factor(ntaxa))) + geom_boxplot(outlier.size = 0.75) + geom_hline(yintercept=1) + scale_fill_brewer(palette = "YlOrRd", name = "Number of Taxa") + xlab("Branch Length") + ylab("Mean N/S count ratio")
+bias.gtr.count <- read.csv("substitution_counts_bias_gtr.csv")
+bias.gtr.count %>% group_by(ntaxa, bl, rep) %>% mutate(ratio_ns = ncount/scount) %>% na.omit() %>% filter(!is.infinite(ratio_ns)) %>% summarize(mean_ratio = mean(ratio_ns))  -> ns_count_ratio
+count.ratio.box <- ggplot(ns_count_ratio, aes(x = as.factor(bl), y = mean_ratio, fill = as.factor(ntaxa))) + geom_boxplot(outlier.size = 0.75) + geom_hline(yintercept=1) + scale_fill_brewer(palette = "YlOrRd", name = "Number of Taxa") + xlab("Branch Length") + ylab("Mean N/S count ratio") +  scale_y_continuous(limits=c(0,4))
 save_plot(paste0(PLOTDIR, "counted_ratio_bias.pdf"), count.ratio.box, base_width = 8, base_height = 5)
+
+
 
 gtr.count <- read.csv("substitution_counts_gtr.csv")
 gtr.count %>% group_by(ntaxa, bl, rep) %>% mutate(ratio_ns = ncount/scount) %>% na.omit() %>% filter(!is.infinite(ratio_ns)) %>% summarize(mean_ratio = mean(ratio_ns))  -> ns_count_ratio
-count.ratio.box <- ggplot(ns_count_ratio, aes(x = as.factor(bl), y = mean_ratio, fill = as.factor(ntaxa))) + geom_boxplot(outlier.size = 0.75) + geom_hline(yintercept=1) + scale_fill_brewer(palette = "YlOrRd", name = "Number of Taxa") + xlab("Branch Length") + ylab("Mean N/S count ratio")
+count.ratio.box <- ggplot(ns_count_ratio, aes(x = as.factor(bl), y = mean_ratio, fill = as.factor(ntaxa))) + geom_boxplot(outlier.size = 0.75) + geom_hline(yintercept=1) + scale_fill_brewer(palette = "YlOrRd", name = "Number of Taxa") + xlab("Branch Length") + ylab("Mean N/S count ratio") + scale_y_continuous(limits=c(0,4))
 save_plot(paste0(PLOTDIR, "counted_ratio_nobias.pdf"), count.ratio.box, base_width = 8, base_height = 5)
-
 
 ##########################################################################################
 source("summary_functions.R")
@@ -192,10 +193,10 @@ theme_set(theme_cowplot() + theme(axis.text    = element_text(size = 10),
 
 
 realdat.sum <- realdat %>% summarize_dnds_real() 
-realdat.sum$method <- factor(realdat.sum$method, levels = c("SLAC1", "FUBAR1", "SLAC2", "FUBAR2"))
+realdat.sum$method <- factor(realdat.sum$method, levels = c("SLAC1", "SLAC2"))
 realdat.sum$dataset <- factor(realdat.sum$dataset, levels = c("amine", "vertrho", "camelid", "h3", "hivrt"))
 realdat.sum$type <- factor(realdat.sum$type, levels=c("gtr", "bias_gtr"), labels=c("No codon bias", "Codon bias"))
-fill_colors <- c("red", "orange")
+fill_colors <- c("darkred", "dodgerblue")
 
 
 theme_set(theme_cowplot() + theme(axis.text    = element_text(size = 10),
@@ -209,8 +210,8 @@ theme_set(theme_cowplot() + theme(axis.text    = element_text(size = 10),
 
 
 
-r    <- realdat.sum %>% filter(truetype == "true2", method %in% c("FUBAR1", "FUBAR2")) %>% ggplot(aes(x = dataset, fill = method, y = r)) + geom_boxplot(position=position_dodge(0.77), outlier.size = 0.75, size=0.4) + facet_wrap(~type) + scale_fill_manual(values=fill_colors, name = "Inference Method") +  xlab("Dataset") + ylab("Pearson Correlation") + scale_y_continuous(limits=c(0,1), breaks = c(0, 0.2, 0.4, 0.6, 0.8, 1.))
-rmsd <- realdat.sum %>% filter(truetype == "true2", method %in% c("FUBAR1", "FUBAR2")) %>% ggplot(aes(x = dataset, fill = method, y = rmsd)) + geom_boxplot(position=position_dodge(0.77), outlier.size = 0.75, size=0.4) + facet_wrap(~type) + scale_fill_manual(values=fill_colors, name = "Inference Method") + xlab("Dataset") + ylab("RMSD")
+r <- realdat.sum %>% ggplot(aes(x = dataset, fill = method, y = r)) + geom_boxplot(position=position_dodge(0.77), outlier.size = 0.75, size=0.4) + facet_wrap(~type) + scale_fill_manual(values=fill_colors, name = "Inference Method") +  xlab("Dataset") + ylab("Pearson Correlation") + scale_y_continuous(limits=c(0,1), breaks = c(0, 0.2, 0.4, 0.6, 0.8, 1.))
+rmsd <- realdat.sum %>% ggplot(aes(x = dataset, fill = method, y = rmsd)) + geom_boxplot(position=position_dodge(0.77), outlier.size = 0.75, size=0.4) + facet_wrap(~type) + scale_fill_manual(values=fill_colors, name = "Inference Method") + xlab("Dataset") + ylab("RMSD")
 real.r.rmsd <- plot_grid(r,rmsd, nrow=2, labels=c("A", "B"))
 save_plot(paste0(PLOTDIR, "real_r_rmsd.pdf"), real.r.rmsd, base_width = 8.75, base_height = 4.5)
 

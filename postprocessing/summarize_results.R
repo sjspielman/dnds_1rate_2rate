@@ -12,7 +12,6 @@ bias   <- read_csv("full_results_bias_gtr_dataset.csv")
 nobias.dnds.sum   <- summarize_dnds(nobias, "nobias")
 bias.dnds.sum     <- summarize_dnds(bias, "bias")
 dnds.sum          <- rbind(nobias.dnds.sum, bias.dnds.sum)
-dnds.sum$truetype <- factor(dnds.sum$truetype, levels=c("true1", "true2"))
 dnds.sum$type     <- factor(dnds.sum$type, levels=c("nobias", "bias"))
 
 

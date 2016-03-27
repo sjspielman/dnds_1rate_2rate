@@ -3,7 +3,7 @@
 require(dplyr)
 require(readr)
 
-COUNTDIR="../data/counted/"
+COUNTDIR="../count_substitutions/counted/"
 
 ntaxa <- 7:11
 branch_lengths <- c(0.0025, 0.01, 0.04, 0.16, 0.64)
@@ -39,6 +39,6 @@ for (type in types){
             }
         }
     }
-    write_csv(dat, paste0("substitution_counts", type, ".csv"))
+    write_csv(dat, paste0("substitution_counts_", type, ".csv"))
 }
 
