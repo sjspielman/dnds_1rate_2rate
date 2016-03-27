@@ -73,11 +73,12 @@ clean_dnds_fel2 <- function(df.fel, numcol)
 } 
 
 
-RESULTDIR <- "../results/results_realtrees/"
+RESULTDIR <- "/Users/sjspielman/Dropbox/dnds1rate2rate_data_results/results/realtrees_results/"
 TRUEDIR <- "../simulation/"
 numcol <- 100
 datasets <- c("amine", "h3", "camelid", "vertrho", "hivrt")
-types <- c("gtr", "bias_gtr")
+mutype <- "gtr"
+types <- c("nobias", "bias")
 nreps <- 50
 
 # Initialize results data frame
@@ -99,20 +100,19 @@ levels(realdat$method) <- c("SLAC1", "SLAC2")  #"FUBAR1", "FUBAR2",
 for (type in types){
     print(type)
     # Load true simulated dN/dS values
-    true <- read.table(paste0(TRUEDIR,"codon_freq_lib_", type, "_true_dnds.txt"), header=T)
-    true_dnds1 <- true$dnds1
-    true_dnds2 <- true$dnds2
-    true_dn    <- true$dn
-    true_ds    <- true$ds
+    true <- read.csv(paste0(TRUEDIR, mutype, type, "_truednds.csv"))
+    true_dnds <- true$dnds
+    true_dn   <- true$dn
+    true_ds   <- true$ds
 
     for (d in datasets){
         print(d)
         for (repl in 1:nreps){
             print(repl)
             # Read in raw results
-            slac   <- read.table(paste(RESULTDIR, "rep", repl, "_", d, "_", type, "_SLAC_GTR.txt", sep=""), header=T)
-            #fubar1 <- read.csv(paste(RESULTDIR, "rep", repl, "_", d, "_", type, "_FUBAR1.txt", sep=""))
-            #fubar2 <- read.csv(paste(RESULTDIR, "rep", repl, "_", d, "_", type, "_FUBAR2.txt", sep=""))
+            slac   <- read.table(paste(RESULTDIR, "rep", repl, "_", d, "_", mutype, type, "_SLAC_GTR.txt", sep=""), header=T)
+            #fubar1 <- read.csv(paste(RESULTDIR, "rep", repl, "_", d, "_", mutype, type, "_FUBAR1.txt", sep=""))
+            #fubar2 <- read.csv(paste(RESULTDIR, "rep", repl, "_", d, "_", mutype, type, "_FUBAR2.txt", sep=""))
             
             # Clean up dN/dS values to replace uninformative with NA
             slac1_w = slac$dN/(mean(slac$dS))
@@ -125,7 +125,7 @@ for (type in types){
             #fubar2_w = clean_dnds_divide( raw_fubar2_w, numcol )            
 
             # create data frame per method  
-            firstpart   <- data.frame("dataset" = rep(d, numcol), "site" = 1:numcol, "rep" = repl, "true1" = true_dnds1, "true2" = true_dnds2, "truedn" = true_dn, "trueds" = true_ds, "type" = rep(type, numcol) )    
+            firstpart   <- data.frame("dataset" = rep(d, numcol), "site" = 1:numcol, "rep" = repl, "true" = true_dnds, "truedn" = true_dn, "trueds" = true_ds, "type" = rep(type, numcol) )    
             temp_slac1  <- cbind(firstpart, data.frame("dnds" = slac1_w, "dn" = slac$dN, "ds" = mean(slac$dS), "method" = rep("SLAC1", numcol)))
             temp_slac2  <- cbind(firstpart, data.frame("dnds" = slac2_w, "dn" = slac$dN, "ds" = slac$dS, "method" = rep("SLAC2", numcol)))
             #temp_fubar1 <- cbind(firstpart, data.frame("dnds" = fubar1_w, "dn" = fubar1$beta, "ds" = fubar1$alpha, "method" = rep("FUBAR1", numcol)))

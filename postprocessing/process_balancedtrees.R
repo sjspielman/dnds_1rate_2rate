@@ -73,11 +73,12 @@ clean_dnds_fel2 <- function(df.fel, numcol)
 } 
 
 
-RESULTDIR <- "../results/balancedtrees_results/"
+RESULTDIR <- "/Users/sjspielman/Dropbox/dnds1rate2rate_data_results/results/balancedtrees_results/"
 TRUEDIR <- "../simulation/"
 numcol <- 100
 ntaxa <- 7:11
-types <- c("gtr", "bias_gtr")
+mutype <- "gtr"
+types <- c("nobias", "bias")
 branch_lengths <- c(0.0025, 0.01, 0.04, 0.16, 0.64)
 nreps <- 50
 numrow <- 750000  # Rows per dataframe, calc'd as 5*5*100*50*6 = ntaxa * bl * alnlen * reps * methods
@@ -87,12 +88,10 @@ numrow <- 750000  # Rows per dataframe, calc'd as 5*5*100*50*6 = ntaxa * bl * al
 for (type in types)
 {
     
-    # Load true simulated dN/dS values
-    true <- read.table(paste0(TRUEDIR,"codon_freq_lib_", type, "_true_dnds.txt"), header=T)
+    true <- read.csv(paste0(TRUEDIR, mutype, type, "_truednds.csv"))
     true_dnds  <- true$dnds
     true_dn    <- true$dn
     true_ds    <- true$ds
-
     
     # Initialize results data frame
     df.results <- data.frame("ntaxa"     = rep(0, numrow), # number of taxa
@@ -118,11 +117,11 @@ for (type in types)
             for (repl in 1:nreps){
 
                 # Read in raw results
-                fel1   <- read.csv(paste(RESULTDIR, "rep", repl, "_n", n, "_bl", bl, "_", type, "_FEL1_GTR.txt", sep=""))        
-                fel2   <- read.csv(paste(RESULTDIR, "rep", repl, "_n", n, "_bl", bl, "_", type, "_FEL2_GTR.txt", sep=""))        
-                slac   <- read.table(paste(RESULTDIR, "rep", repl, "_n", n, "_bl", bl, "_", type, "_SLAC_GTR.txt", sep=""), header=T)
-                fubar1 <- read.csv(paste(RESULTDIR, "rep", repl, "_n", n, "_bl", bl, "_", type, "_FUBAR1.txt", sep=""))
-                fubar2 <- read.csv(paste(RESULTDIR, "rep", repl, "_n", n, "_bl", bl, "_", type, "_FUBAR2.txt", sep=""))
+                fel1   <- read.csv(paste(RESULTDIR, "rep", repl, "_n", n, "_bl", bl, "_", mutype, type, "_FEL1_GTR.txt", sep=""))        
+                fel2   <- read.csv(paste(RESULTDIR, "rep", repl, "_n", n, "_bl", bl, "_", mutype, type, "_FEL2_GTR.txt", sep=""))        
+                slac   <- read.table(paste(RESULTDIR, "rep", repl, "_n", n, "_bl", bl, "_", mutype, type, "_SLAC_GTR.txt", sep=""), header=T)
+                fubar1 <- read.csv(paste(RESULTDIR, "rep", repl, "_n", n, "_bl", bl, "_", mutype, type, "_FUBAR1.txt", sep=""))
+                fubar2 <- read.csv(paste(RESULTDIR, "rep", repl, "_n", n, "_bl", bl, "_", mutype, type, "_FUBAR2.txt", sep=""))
                 
                 # Clean up dN/dS values to replace uninformative with NA
                 fel1_w = clean_dnds_fel1(fel1, numcol)
