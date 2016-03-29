@@ -27,16 +27,13 @@ treelen.dat <- dnds.sum %>% mutate(treelen = 2*(ntaxa-1)*bl) %>% filter(method =
 gtr.count <- read.csv("substitution_counts_gtr_nobias.csv")
 bias.gtr.count <- read.csv("substitution_counts_gtr_bias.csv")
 
-### Read in and process linear model results
+### Read in and factorize linear model results
 comp.order <- c("FUBAR1 - SLAC1", "FEL1 - SLAC1", "FEL1 - FUBAR1", "SLAC1 - SLAC2", "FUBAR1 - FUBAR2", "FEL1 - FEL2")
-linmodels.correlations <- read.csv("linear_model_results_correlation.csv") # Note that this file was manually created generated using information found in the file "build_linear_models.R"
-linmodels.correlations$modeltype <- "r"
-linmodels.rmsd <- read.csv("linear_model_results_rmsd.csv") # Note that this file was manually created generated using information found in the file "build_linear_models.R"
-linmodels.rmsd$modeltype <- "rmsd"
-linmodels.all <-rbind(linmodels.correlations, linmodels.rmsd) %>% filter(comp %in% comp.order)
-linmodels.all$modeltype <- factor(linmodels.all$modeltype, levels = c("r", "rmsd"))
-linmodels.all$comp <- factor(linmodels.all$comp, levels = comp.order)
-linmodels.all$type <- factor(linmodels.all$type, levels=c("nobias", "bias"), labels=c("No codon bias", "Codon bias"))
+linmodels <- read.csv("linear_model_results.csv") # Note that this file was manually created generated using information found in the file "build_linear_models.R"
+linmodels <- filter(linmodels, comp %in% comp.order)
+linmodels$model <- factor(linmodels$model, levels = c("r", "rmsd"))
+linmodels$comp <- factor(linmodels$comp, levels = comp.order)
+linmodels$type <- factor(linmodels$type, levels=c("nobias", "bias"), labels=c("No codon bias", "Codon bias"))
 
 
 
@@ -142,7 +139,7 @@ theme_set(theme_cowplot() + theme(axis.text.x = element_text(size=10),
                                   legend.position = "none"))
 
 
-linmodels.all %>% filter(modeltype == "r") %>% arrange(comp) %>%
+linmodels %>% filter(model == "r") %>% arrange(comp) %>%
   ggplot(aes(x = coeff, y = comp, color = sig)) + geom_point(size=ptsize) + 
   geom_segment(aes(x=lowerCI,xend=upperCI,y=comp,yend=comp),size=linesize) + 
   geom_vline(xintercept=0, size=0.5) + 
@@ -151,13 +148,13 @@ linmodels.all %>% filter(modeltype == "r") %>% arrange(comp) %>%
   scale_x_continuous(limits=c(-0.05, 0.3)) +  
   scale_color_manual(values = sig_colors) -> linmodel.r
 
-linmodels.all %>% filter(modeltype == "rmsd") %>% arrange(comp) %>%
+linmodels %>% filter(model == "rmsd") %>% arrange(comp) %>%
   ggplot(aes(x = coeff, y = comp, color = sig)) + geom_point(size=ptsize) + 
   geom_segment(aes(x=lowerCI,xend=upperCI,y=comp,yend=comp),size=linesize) + 
   geom_vline(xintercept=0, size=0.5) + 
   facet_grid(~type) + background_grid() +
   xlab("Average RMSD Difference") + ylab("Comparison") + 
-  scale_x_continuous(limits=c(-0.5,0.5)) +  
+  scale_x_continuous(limits=c(-0.3,0.1)) +  
   scale_color_manual(values = sig_colors) -> linmodel.rmsd
 
 linmodel.plots <- plot_grid(linmodel.r, linmodel.rmsd, nrow=2, labels=c("A", "B"))

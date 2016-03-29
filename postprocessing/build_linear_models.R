@@ -1,6 +1,5 @@
 # SJS
 # This script builds mixed effects linear models to determine relative accuracy of models/methods
-# NOTE: Condition BL=0.0025 is excluded from linear models since most results are meaningless at that low of a divergence level.
 
 
 require(dplyr)
@@ -10,7 +9,7 @@ require(readr)
 
 
 # x is glht object
-extract_multcomp <- function(x, type)
+extract_multcomp <- function(x, type, model)
 {
     confsum <- confint(summary(x))$confint
     testnames <- names(summary(x)$test$tstat)
@@ -73,6 +72,7 @@ extract_multcomp <- function(x, type)
         dat <- rbind(dat, temp)
     }
     dat$type <- type
+    dat$model <- model
     dat
 }
       
@@ -84,7 +84,13 @@ nobias$method <- factor(nobias$method)
 bias <- dat.sum %>% na.omit() %>% filter(type == "bias")    # %>% filter(bl >= 0.01, ntaxa <= 1024)
 bias$method <- factor(bias$method)
 
-
+fits <- data.frame("comp"    = character(), 
+                  "coeff"   = numeric(),
+                  "lowerCI" = numeric(),
+                  "upperCI" = numeric(),
+                  "pvalue"  = numeric(),
+                  "sig"     = character(),
+                  "model"   = character())
 
 ##################### Correlation linear models #######################
 # NOTE: BL = 0.0025 excluded since results are largely meaningless at this low of a divergence level
@@ -92,48 +98,33 @@ bias$method <- factor(bias$method)
 nobias %>% filter(bl >= 0.01) -> nobias.sub
 bias %>% filter(bl >= 0.01) -> bias.sub
 
-r.fits <- data.frame("comp"    = character(), 
-                  "coeff"   = numeric(),
-                  "lowerCI" = numeric(),
-                  "upperCI" = numeric(),
-                  "pvalue"  = numeric(),
-                  "sig"     = character())
 
 fit.nobias <- lmer(r ~ method + (1|ntaxa:bl) + (1|rep), data = nobias.sub)
 fit.nobias.mc <- glht(fit.nobias, linfct=mcp(method='Tukey'))
-r.fits <- rbind(r.fits, extract_multcomp(fit.nobias.mc, "nobias"))
+fits <- rbind(fits, extract_multcomp(fit.nobias.mc, "nobias", "r"))
 
 fit.bias1 <- lmer(r ~ method + (1|ntaxa:bl) + (1|rep), data = bias.sub)
 fit.bias1.mc <- glht(fit.bias1, linfct=mcp(method='Tukey'))
-r.fits <- rbind(r.fits, extract_multcomp(fit.bias1.mc, "bias"))
+fits <- rbind(fits, extract_multcomp(fit.bias1.mc, "bias", "r"))
 
-write.csv(r.fits, "linear_model_results_correlation.csv", quote = F, row.names = F)
 
 
 
 ############### RMSD linear models #################
-# NOTE: BL = <0.0025,0.01> and N = <128 excluded since results are largely meaningless at this low of a divergence level
+# NOTE: BL = <0.0025,0.01> and N = 128 excluded since results are largely meaningless at this low of a divergence level
 
 nobias %>% filter(bl >= 0.04, ntaxa >= 256, rmsd <= 100 ) -> nobias.sub
 bias %>% filter(bl >= 0.04, ntaxa >= 256, rmsd <= 100) -> bias.sub
 
 
-rmsd.fits <- data.frame("comp"    = character(), 
-                  "coeff"   = numeric(),
-                  "lowerCI" = numeric(),
-                  "upperCI" = numeric(),
-                  "pvalue"  = numeric(),
-                  "sig"     = character())
-
-
 fit.nobias <- lmer(rmsd ~ method + (1|ntaxa:bl) + (1|rep), data = nobias.sub)
 fit.nobias.mc <- glht(fit.nobias, linfct=mcp(method='Tukey'))
-rmsd.fits <- rbind(rmsd.fits, extract_multcomp(fit.nobias.mc, "nobias"))
+fits <- rbind(fits, extract_multcomp(fit.nobias.mc, "nobias", "rmsd"))
 
 fit.bias1 <- lmer(rmsd ~ method + (1|ntaxa:bl) + (1|rep), data = bias.sub)
 fit.bias1.mc <- glht(fit.bias1, linfct=mcp(method='Tukey'))
-rmsd.fits <- rbind(rmsd.fits, extract_multcomp(fit.bias1.mc, "bias"))
+fits <- rbind(fits, extract_multcomp(fit.bias1.mc, "bias", "rmsd"))
 
 
-write.csv(rmsd.fits, "linear_model_results_rmsd.csv", quote = F, row.names = F)
+write.csv(fits, "linear_model_results.csv", quote = F, row.names = F)
 
