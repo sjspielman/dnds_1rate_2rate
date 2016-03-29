@@ -99,7 +99,6 @@ r.fits <- data.frame("comp"    = character(),
                   "pvalue"  = numeric(),
                   "sig"     = character())
 
-
 fit.nobias <- lmer(r ~ method + (1|ntaxa:bl) + (1|rep), data = nobias.sub)
 fit.nobias.mc <- glht(fit.nobias, linfct=mcp(method='Tukey'))
 r.fits <- rbind(r.fits, extract_multcomp(fit.nobias.mc, "nobias"))
@@ -113,10 +112,10 @@ write.csv(r.fits, "linear_model_results_correlation.csv", quote = F, row.names =
 
 
 ############### RMSD linear models #################
-# NOTE: BL = <0.0025,0.01,0.04> and N = <128,256> excluded since results are largely meaningless at this low of a divergence level
+# NOTE: BL = <0.0025,0.01> and N = <128 excluded since results are largely meaningless at this low of a divergence level
 
-nobias %>% filter(bl >= 0.16, ntaxa >= 512) -> nobias.sub
-bias %>% filter(bl >= 0.16, ntaxa >= 512) -> bias.sub
+nobias %>% filter(bl >= 0.04, ntaxa >= 256, rmsd <= 100 ) -> nobias.sub
+bias %>% filter(bl >= 0.04, ntaxa >= 256, rmsd <= 100) -> bias.sub
 
 
 rmsd.fits <- data.frame("comp"    = character(), 

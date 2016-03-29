@@ -157,7 +157,7 @@ linmodels.all %>% filter(modeltype == "rmsd") %>% arrange(comp) %>%
   geom_vline(xintercept=0, size=0.5) + 
   facet_grid(~type) + background_grid() +
   xlab("Average RMSD Difference") + ylab("Comparison") + 
-  scale_x_continuous(limits=c(-0.15,0.12)) +  
+  scale_x_continuous(limits=c(-0.5,0.5)) +  
   scale_color_manual(values = sig_colors) -> linmodel.rmsd
 
 linmodel.plots <- plot_grid(linmodel.r, linmodel.rmsd, nrow=2, labels=c("A", "B"))

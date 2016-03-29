@@ -4,7 +4,7 @@
 require(dplyr)
 require(readr)
 
-max_threshold = 9999.99 # Hyphy assigns this value (or greater, some decimal threshold lots of points out) to parameter upon failure to converge
+max_threshold = 9999 # Hyphy assigns this value (or greater, some decimal threshold lots of points out) to parameter upon failure to converge
 
 
 # Clean dN/dS values for those methods which return separate dN and dS (hence divide)
@@ -77,83 +77,86 @@ RESULTDIR <- ""
 TRUEDIR <- "../simulation/"
 numcol <- 100
 ntaxa <- 7:11
-mutype <- "gtr"
+mutype <- c("hky", "gtr")
 types <- c("nobias", "bias")
 branch_lengths <- c(0.0025, 0.01, 0.04, 0.16, 0.64)
 nreps <- 50
 numrow <- 750000  # Rows per dataframe, calc'd as 5*5*100*50*6 = ntaxa * bl * alnlen * reps * methods
 
 
-for (type in types)
-{
+
+for (mu in mutypes){
+
+    for (type in types)
+    {
     
-    true <- read.csv(paste0(TRUEDIR, "truednds_", mutype, "_", type, ".csv"))
-    true_dnds  <- true$dnds
-    true_dn    <- true$dn
-    true_ds    <- true$ds
+        true <- read.csv(paste0(TRUEDIR, "truednds_", mutype, "_", type, ".csv"))
+        true_dnds  <- true$dnds
+        true_dn    <- true$dn
+        true_ds    <- true$ds
     
-    # Initialize results data frame
-    df.results <- data.frame("ntaxa"     = rep(0, numrow), # number of taxa
-                             "bl"        = rep(0, numrow),  # branch lengths
-                             "site"      = rep(0, numrow),  # site index (1:numcol)
-                             "rep"       = rep(0, numrow),
-                             "true"      = rep(0, numrow),  # True dN/d
-                             "truedn"    = rep(0, numrow), # True dN
-                             "trueds"    = rep(0, numrow), # True dS
-                             "mutype"    = rep(0, numrow), # either gtr or hky
-                             "type"      = rep(as.factor(type), numrow),   # nobias, bias
-                             "dnds"      = rep(0, numrow),  # inferred dN/dS
-                             "dn"        = rep(0, numrow),   # inferred dN (If 1-rate method, then same as dN/dS). NA for FEL2_1, FUBAR2_1
-                             "ds"        = rep(0, numrow),   # inferred dS (If 1-rate method, then 1, or mean(dS) if SLAC). NA for FEL2_1, FUBAR2_1
-                             "method"    = rep("SLAC1", numrow))   # pvalue or pp to indicate which type of value is in the signif column
-    levels(df.results$type) <- as.factor(type)
-    levels(df.results$method) <- c("FEL1", "FEL2", "FUBAR1", "FUBAR2", "SLAC1", "SLAC2")
+        # Initialize results data frame
+        df.results <- data.frame("ntaxa"     = rep(0, numrow),        # number of taxa
+                                 "bl"        = rep(0, numrow),        # branch lengths
+                                 "site"      = rep(0, numrow),        # site index (1:numcol)
+                                 "rep"       = rep(0, numrow),        # replicate (1-50)
+                                 "true"      = rep(0, numrow),        # True dN/ddS
+                                 "truedn"    = rep(0, numrow),        # True dN
+                                 "trueds"    = rep(0, numrow),        # True dS
+                                 "mutype"    = rep(0, numrow),        # either gtr or hky
+                                 "type"      = rep(type, numrow),     # nobias, bias
+                                 "dnds"      = rep(0, numrow),        # inferred dN/dS
+                                 "dn"        = rep(0, numrow),        # inferred dN (If 1-rate method, then same as dN/dS).
+                                 "ds"        = rep(0, numrow),        # inferred dS (If 1-rate method, then 1, or mean(dS) if SLAC).
+                                 "method"    = rep("SLAC1", numrow))  # Inference method
+        levels(df.results$type) <- as.factor(type)
+        levels(df.results$method) <- c("FEL1", "FEL2", "FUBAR1", "FUBAR2", "SLAC1", "SLAC2")
 
-    i <- 1
-    for (n in ntaxa){
-        print(n)
-        for (bl in branch_lengths){
-            print(bl)
-            for (repl in 1:nreps){
+        i <- 1
+        for (n in ntaxa){
+            print(n)
+            for (bl in branch_lengths){
+                print(bl)
+                for (repl in 1:nreps){
 
-                # Read in raw results
-                fel1   <- read.csv(paste(RESULTDIR, "rep", repl, "_n", n, "_bl", bl, "_", mutype, "_", type, "_FEL1.txt", sep=""))        
-                fel2   <- read.csv(paste(RESULTDIR, "rep", repl, "_n", n, "_bl", bl, "_", mutype, "_", type, "_FEL2.txt", sep=""))        
-                slac   <- read.table(paste(RESULTDIR, "rep", repl, "_n", n, "_bl", bl, "_", mutype, "_", type, "_SLAC.txt", sep=""), header=T)
-                fubar1 <- read.csv(paste(RESULTDIR, "rep", repl, "_n", n, "_bl", bl, "_", mutype, "_", type, "_FUBAR1.txt", sep=""))
-                fubar2 <- read.csv(paste(RESULTDIR, "rep", repl, "_n", n, "_bl", bl, "_", mutype, "_", type, "_FUBAR2.txt", sep=""))
+                    # Read in raw results
+                    fel1   <- read.csv(paste(RESULTDIR, "rep", repl, "_n", n, "_bl", bl, "_", mutype, "_", type, "_FEL1.txt", sep=""))        
+                    fel2   <- read.csv(paste(RESULTDIR, "rep", repl, "_n", n, "_bl", bl, "_", mutype, "_", type, "_FEL2.txt", sep=""))        
+                    slac   <- read.table(paste(RESULTDIR, "rep", repl, "_n", n, "_bl", bl, "_", mutype, "_", type, "_SLAC.txt", sep=""), header=T)
+                    fubar1 <- read.csv(paste(RESULTDIR, "rep", repl, "_n", n, "_bl", bl, "_", mutype, "_", type, "_FUBAR1.txt", sep=""))
+                    fubar2 <- read.csv(paste(RESULTDIR, "rep", repl, "_n", n, "_bl", bl, "_", mutype, "_", type, "_FUBAR2.txt", sep=""))
                 
-                # Clean up dN/dS values to replace uninformative with NA
-                fel1_w = clean_dnds_fel1(fel1, numcol)
-                fel2_w = clean_dnds_fel2(fel2, numcol)
-                slac1_w = slac$dN/(mean(slac$dS))
-                raw_slac2_w  = slac$dN/slac$dS
-                slac2_w = clean_dnds_divide( raw_slac2_w, numcol )
+                    # Clean up dN/dS values to replace uninformative with NA
+                    fel1_w = clean_dnds_fel1(fel1, numcol)
+                    fel2_w = clean_dnds_fel2(fel2, numcol)
+                    slac1_w = slac$dN/(mean(slac$dS))
+                    raw_slac2_w  = slac$dN/slac$dS
+                    slac2_w = clean_dnds_divide( raw_slac2_w, numcol )
                 
-                raw_fubar1_w = fubar1$beta / fubar1$alpha
-                raw_fubar2_w = fubar2$beta / fubar2$alpha               
-                fubar1_w = clean_dnds_divide( raw_fubar1_w, numcol )
-                fubar2_w = clean_dnds_divide( raw_fubar2_w, numcol )            
+                    raw_fubar1_w = fubar1$beta / fubar1$alpha
+                    raw_fubar2_w = fubar2$beta / fubar2$alpha               
+                    fubar1_w = clean_dnds_divide( raw_fubar1_w, numcol )
+                    fubar2_w = clean_dnds_divide( raw_fubar2_w, numcol )            
 
-                # create data frame per method  
-                firstpart   <- data.frame("ntaxa" = rep(2^n, numcol), "bl" = rep(bl, numcol), "site" = 1:numcol, "rep" = repl, "true" = true_dnds, "truedn" = true_dn, "trueds" = true_ds, "mutype" = mutype, "type" = rep(type, numcol) )    
-                temp_fel1   <- cbind(firstpart, data.frame("dnds" = fel1_w, "dn" = fel1_w, "ds" = 1., "method" = rep("FEL1", numcol)))
-                temp_fel2   <- cbind(firstpart, data.frame("dnds" = fel2_w, "dn" = fel2$dN, "ds" = fel2$dS, "method" = rep("FEL2", numcol)))
-                temp_slac1  <- cbind(firstpart, data.frame("dnds" = slac1_w, "dn" = slac$dN, "ds" = mean(slac$dS), "method" = rep("SLAC1", numcol)))
-                temp_slac2  <- cbind(firstpart, data.frame("dnds" = slac2_w, "dn" = slac$dN, "ds" = slac$dS, "method" = rep("SLAC2", numcol)))
-                temp_fubar1 <- cbind(firstpart, data.frame("dnds" = fubar1_w, "dn" = fubar1$beta, "ds" = fubar1$alpha, "method" = rep("FUBAR1", numcol)))
-                temp_fubar2 <- cbind(firstpart, data.frame("dnds" = fubar2_w, "dn" = fubar2$beta, "ds" = fubar2$alpha, "method" = rep("FUBAR2", numcol)))
+                    # create data frame per method  
+                    firstpart   <- data.frame("ntaxa" = rep(2^n, numcol), "bl" = rep(bl, numcol), "site" = 1:numcol, "rep" = repl, "true" = true_dnds, "truedn" = true_dn, "trueds" = true_ds, "mutype" = mutype, "type" = rep(type, numcol) )    
+                    temp_fel1   <- cbind(firstpart, data.frame("dnds" = fel1_w, "dn" = fel1_w, "ds" = 1., "method" = rep("FEL1", numcol)))
+                    temp_fel2   <- cbind(firstpart, data.frame("dnds" = fel2_w, "dn" = fel2$dN, "ds" = fel2$dS, "method" = rep("FEL2", numcol)))
+                    temp_slac1  <- cbind(firstpart, data.frame("dnds" = slac1_w, "dn" = slac$dN, "ds" = mean(slac$dS), "method" = rep("SLAC1", numcol)))
+                    temp_slac2  <- cbind(firstpart, data.frame("dnds" = slac2_w, "dn" = slac$dN, "ds" = slac$dS, "method" = rep("SLAC2", numcol)))
+                    temp_fubar1 <- cbind(firstpart, data.frame("dnds" = fubar1_w, "dn" = fubar1$beta, "ds" = fubar1$alpha, "method" = rep("FUBAR1", numcol)))
+                    temp_fubar2 <- cbind(firstpart, data.frame("dnds" = fubar2_w, "dn" = fubar2$beta, "ds" = fubar2$alpha, "method" = rep("FUBAR2", numcol)))
 
-                # Merge
-                temp <- rbind(temp_fel1, temp_fel2, temp_slac1, temp_slac2, temp_fubar1, temp_fubar2)
-                df.results[i:(i+nrow(temp)-1),] <- temp
-                i <- i + nrow(temp)
+                    # Merge
+                    temp <- rbind(temp_fel1, temp_fel2, temp_slac1, temp_slac2, temp_fubar1, temp_fubar2)
+                    df.results[i:(i+nrow(temp)-1),] <- temp
+                    i <- i + nrow(temp)
+                }
             }
         }
+        # Save full dataset
+        write_csv(df.results, paste0("full_results_", mutype, "_", type, ".csv"))
     }
-    # Save full dataset
-    write_csv(df.results, paste0("full_results_", mutype, type, ".csv"))
 }
-
 
 
