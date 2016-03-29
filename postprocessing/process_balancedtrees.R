@@ -73,7 +73,7 @@ clean_dnds_fel2 <- function(df.fel, numcol)
 } 
 
 
-RESULTDIR <- "/Users/sjspielman/Dropbox/dnds1rate2rate_data_results/results/balancedtrees_results/"
+RESULTDIR <- ""
 TRUEDIR <- "../simulation/"
 numcol <- 100
 ntaxa <- 7:11
@@ -84,11 +84,10 @@ nreps <- 50
 numrow <- 750000  # Rows per dataframe, calc'd as 5*5*100*50*6 = ntaxa * bl * alnlen * reps * methods
 
 
-
 for (type in types)
 {
     
-    true <- read.csv(paste0(TRUEDIR, mutype, type, "_truednds.csv"))
+    true <- read.csv(paste0(TRUEDIR, "truednds_", mutype, "_", type, ".csv"))
     true_dnds  <- true$dnds
     true_dn    <- true$dn
     true_ds    <- true$ds
@@ -101,7 +100,8 @@ for (type in types)
                              "true"      = rep(0, numrow),  # True dN/d
                              "truedn"    = rep(0, numrow), # True dN
                              "trueds"    = rep(0, numrow), # True dS
-                             "type"      = rep(as.factor(type), numrow),   # nobias, bias, asym
+                             "mutype"    = rep(0, numrow), # either gtr or hky
+                             "type"      = rep(as.factor(type), numrow),   # nobias, bias
                              "dnds"      = rep(0, numrow),  # inferred dN/dS
                              "dn"        = rep(0, numrow),   # inferred dN (If 1-rate method, then same as dN/dS). NA for FEL2_1, FUBAR2_1
                              "ds"        = rep(0, numrow),   # inferred dS (If 1-rate method, then 1, or mean(dS) if SLAC). NA for FEL2_1, FUBAR2_1
@@ -117,11 +117,11 @@ for (type in types)
             for (repl in 1:nreps){
 
                 # Read in raw results
-                fel1   <- read.csv(paste(RESULTDIR, "rep", repl, "_n", n, "_bl", bl, "_", mutype, type, "_FEL1_GTR.txt", sep=""))        
-                fel2   <- read.csv(paste(RESULTDIR, "rep", repl, "_n", n, "_bl", bl, "_", mutype, type, "_FEL2_GTR.txt", sep=""))        
-                slac   <- read.table(paste(RESULTDIR, "rep", repl, "_n", n, "_bl", bl, "_", mutype, type, "_SLAC_GTR.txt", sep=""), header=T)
-                fubar1 <- read.csv(paste(RESULTDIR, "rep", repl, "_n", n, "_bl", bl, "_", mutype, type, "_FUBAR1.txt", sep=""))
-                fubar2 <- read.csv(paste(RESULTDIR, "rep", repl, "_n", n, "_bl", bl, "_", mutype, type, "_FUBAR2.txt", sep=""))
+                fel1   <- read.csv(paste(RESULTDIR, "rep", repl, "_n", n, "_bl", bl, "_", mutype, "_", type, "_FEL1.txt", sep=""))        
+                fel2   <- read.csv(paste(RESULTDIR, "rep", repl, "_n", n, "_bl", bl, "_", mutype, "_", type, "_FEL2.txt", sep=""))        
+                slac   <- read.table(paste(RESULTDIR, "rep", repl, "_n", n, "_bl", bl, "_", mutype, "_", type, "_SLAC.txt", sep=""), header=T)
+                fubar1 <- read.csv(paste(RESULTDIR, "rep", repl, "_n", n, "_bl", bl, "_", mutype, "_", type, "_FUBAR1.txt", sep=""))
+                fubar2 <- read.csv(paste(RESULTDIR, "rep", repl, "_n", n, "_bl", bl, "_", mutype, "_", type, "_FUBAR2.txt", sep=""))
                 
                 # Clean up dN/dS values to replace uninformative with NA
                 fel1_w = clean_dnds_fel1(fel1, numcol)
@@ -136,7 +136,7 @@ for (type in types)
                 fubar2_w = clean_dnds_divide( raw_fubar2_w, numcol )            
 
                 # create data frame per method  
-                firstpart   <- data.frame("ntaxa" = rep(2^n, numcol), "bl" = rep(bl, numcol), "site" = 1:numcol, "rep" = repl, "true" = true_dnds, "truedn" = true_dn, "trueds" = true_ds, "type" = rep(type, numcol) )    
+                firstpart   <- data.frame("ntaxa" = rep(2^n, numcol), "bl" = rep(bl, numcol), "site" = 1:numcol, "rep" = repl, "true" = true_dnds, "truedn" = true_dn, "trueds" = true_ds, "mutype" = mutype, "type" = rep(type, numcol) )    
                 temp_fel1   <- cbind(firstpart, data.frame("dnds" = fel1_w, "dn" = fel1_w, "ds" = 1., "method" = rep("FEL1", numcol)))
                 temp_fel2   <- cbind(firstpart, data.frame("dnds" = fel2_w, "dn" = fel2$dN, "ds" = fel2$dS, "method" = rep("FEL2", numcol)))
                 temp_slac1  <- cbind(firstpart, data.frame("dnds" = slac1_w, "dn" = slac$dN, "ds" = mean(slac$dS), "method" = rep("SLAC1", numcol)))
@@ -152,7 +152,7 @@ for (type in types)
         }
     }
     # Save full dataset
-    write_csv(df.results, "full_results_", type, "_dataset.csv")
+    write_csv(df.results, paste0("full_results_", mutype, type, ".csv"))
 }
 
 

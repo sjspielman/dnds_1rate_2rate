@@ -89,9 +89,8 @@ bias$method <- factor(bias$method)
 ##################### Correlation linear models #######################
 # NOTE: BL = 0.0025 excluded since results are largely meaningless at this low of a divergence level
 
-nobias %>% filter(truetype == "true1", bl >= 0.01) -> nobias.true1
-bias %>% filter(truetype == "true1", bl >= 0.01) -> bias.true1
-bias %>% filter(truetype == "true2", bl >= 0.01) -> bias.true2
+nobias %>% filter(bl >= 0.01) -> nobias.sub
+bias %>% filter(bl >= 0.01) -> bias.sub
 
 r.fits <- data.frame("comp"    = character(), 
                   "coeff"   = numeric(),
@@ -101,17 +100,13 @@ r.fits <- data.frame("comp"    = character(),
                   "sig"     = character())
 
 
-fit.nobias <- lmer(r ~ method + (1|ntaxa:bl) + (1|rep), data = nobias.true1)
+fit.nobias <- lmer(r ~ method + (1|ntaxa:bl) + (1|rep), data = nobias.sub)
 fit.nobias.mc <- glht(fit.nobias, linfct=mcp(method='Tukey'))
 r.fits <- rbind(r.fits, extract_multcomp(fit.nobias.mc, "nobias"))
 
-fit.bias1 <- lmer(r ~ method + (1|ntaxa:bl) + (1|rep), data = bias.true1)
+fit.bias1 <- lmer(r ~ method + (1|ntaxa:bl) + (1|rep), data = bias.sub)
 fit.bias1.mc <- glht(fit.bias1, linfct=mcp(method='Tukey'))
-r.fits <- rbind(r.fits, extract_multcomp(fit.bias1.mc, "bias1"))
-
-fit.bias2 <- lmer(r ~ method + (1|ntaxa:bl) + (1|rep), data = bias.true2)
-fit.bias2.mc <- glht(fit.bias2, linfct=mcp(method='Tukey'))
-r.fits <- rbind(r.fits, extract_multcomp(fit.bias2.mc, "bias2"))
+r.fits <- rbind(r.fits, extract_multcomp(fit.bias1.mc, "bias"))
 
 write.csv(r.fits, "linear_model_results_correlation.csv", quote = F, row.names = F)
 
@@ -120,10 +115,8 @@ write.csv(r.fits, "linear_model_results_correlation.csv", quote = F, row.names =
 ############### RMSD linear models #################
 # NOTE: BL = <0.0025,0.01,0.04> and N = <128,256> excluded since results are largely meaningless at this low of a divergence level
 
-nobias %>% filter(truetype == "true1", bl >= 0.16, ntaxa >= 512) -> nobias.true1
-bias %>% filter(truetype == "true1", bl >= 0.16, ntaxa >= 512) -> bias.true1
-bias %>% filter(truetype == "true2", bl >= 0.16, ntaxa >= 512) -> bias.true2
-
+nobias %>% filter(bl >= 0.16, ntaxa >= 512) -> nobias.sub
+bias %>% filter(bl >= 0.16, ntaxa >= 512) -> bias.sub
 
 
 rmsd.fits <- data.frame("comp"    = character(), 
@@ -134,17 +127,14 @@ rmsd.fits <- data.frame("comp"    = character(),
                   "sig"     = character())
 
 
-fit.nobias <- lmer(rmsd ~ method + (1|ntaxa:bl) + (1|rep), data = nobias.true1)
+fit.nobias <- lmer(rmsd ~ method + (1|ntaxa:bl) + (1|rep), data = nobias.sub)
 fit.nobias.mc <- glht(fit.nobias, linfct=mcp(method='Tukey'))
 rmsd.fits <- rbind(rmsd.fits, extract_multcomp(fit.nobias.mc, "nobias"))
 
-fit.bias1 <- lmer(rmsd ~ method + (1|ntaxa:bl) + (1|rep), data = bias.true1)
+fit.bias1 <- lmer(rmsd ~ method + (1|ntaxa:bl) + (1|rep), data = bias.sub)
 fit.bias1.mc <- glht(fit.bias1, linfct=mcp(method='Tukey'))
-rmsd.fits <- rbind(rmsd.fits, extract_multcomp(fit.bias1.mc, "bias1"))
+rmsd.fits <- rbind(rmsd.fits, extract_multcomp(fit.bias1.mc, "bias"))
 
-fit.bias2 <- lmer(rmsd ~ method + (1|ntaxa:bl) + (1|rep), data = bias.true2)
-fit.bias2.mc <- glht(fit.bias2, linfct=mcp(method='Tukey'))
-rmsd.fits <- rbind(rmsd.fits, extract_multcomp(fit.bias2.mc, "bias2"))
 
 write.csv(rmsd.fits, "linear_model_results_rmsd.csv", quote = F, row.names = F)
 

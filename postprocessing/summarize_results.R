@@ -6,8 +6,8 @@ require(tidyr)
 require(readr)
 
 
-nobias <- read_csv("full_results_gtr_dataset.csv")
-bias   <- read_csv("full_results_bias_gtr_dataset.csv")
+nobias <- read_csv("full_results_gtr_nobias.csv")
+bias   <- read_csv("full_results_gtr_bias.csv")
 
 nobias.dnds.sum   <- summarize_dnds(nobias, "nobias")
 bias.dnds.sum     <- summarize_dnds(bias, "bias")

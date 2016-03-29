@@ -23,9 +23,9 @@ nobias_freqs = []
 bias_freqs   = []
 bias_term    = []
 
-unbiased_freqfile = "codon_freq_lib_hkynobias.txt"
-gtr_freqfile      = "codon_freq_lib_gtrnobias.txt"
-bias_gtr_freqfile = "codon_freq_lib_gtrbias.txt"
+unbiased_freqfile = "codon_freq_lib_hky_nobias.txt"
+gtr_freqfile      = "codon_freq_lib_gtr_nobias.txt"
+bias_gtr_freqfile = "codon_freq_lib_gtr_bias.txt"
 bias_term_file    = "gtrbias_term.csv" 
 
 unbiased_freqs = np.loadtxt(unbiased_freqfile)

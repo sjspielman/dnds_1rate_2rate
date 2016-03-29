@@ -57,14 +57,13 @@ summarize_ds <- function(dat, type)
 summarize_dnds_real <- function(dat)
 {
 
-    # Summarize, for true2
     dat  %>% 
       na.omit() %>% filter(!is.infinite(dnds)) %>% 
       group_by(dataset, method, type, rep) %>% 
       do( bias.raw = glm(dnds ~ offset(true), dat = .),  
           cor.raw  = cor(.$true, .$dnds),
           rmsd.raw = sqrt(mean((.$true - .$dnds)^2))) %>% 
-      mutate(estbias = summary(bias.raw)$coeff[1], r = cor.raw[1], rmsd = rmsd.raw[[1]]) %>% 
+      mutate(estbias = summary(bias.raw)$coeff[1], r = cor.raw[1], rmsd = rmsd.raw[[1]]) %>%
       select(-bias.raw, -cor.raw, -rmsd.raw) %>% na.omit() -> summ
     
     summ

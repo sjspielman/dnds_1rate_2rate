@@ -2,13 +2,13 @@ import sys
 from compute_dnds_from_mutsel import *
 
 
-types = ["gtrnobias", "gtrbias", "hkynobias", "hkybias"]
+types = ["gtr_nobias", "gtr_bias", "hky_nobias", "hky_bias"]
 for type in types:
 
     print "Calculuting true dN/dS for ", type, "simulations"
     
     freqfile = "codon_freq_lib_" + type + ".txt"
-    dndsfile = type + "_truednds.csv"
+    dndsfile = "truednds_" + type + ".csv"
 
     true_frequencies = np.loadtxt(freqfile)
 
