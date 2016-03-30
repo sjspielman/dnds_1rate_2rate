@@ -1,11 +1,15 @@
 # SJS
 # Script to merge all dN/dS inferences into a single data frame, one for each simulation set.
+args<-commandArgs(TRUE)
+if (length(args) != 1)
+{
+    stop("Supply the directory where results are stored as a cmd line argument.")
+}
+
 
 require(dplyr)
 require(readr)
-
 max_threshold = 9999 # Hyphy assigns this value (or greater, some decimal threshold lots of points out) to parameter upon failure to converge
-
 
 # Clean dN/dS values for those methods which return separate dN and dS (hence divide)
 # Methods include SLAC, FUBAR1, FUBAR2
@@ -73,11 +77,11 @@ clean_dnds_fel2 <- function(df.fel, numcol)
 } 
 
 
-RESULTDIR <- ""
+RESULTDIR <- args[1]
 TRUEDIR <- "../simulation/"
 numcol <- 100
 ntaxa <- 7:11
-mutype <- c("hky", "gtr")
+mutypes <- c("hky") #, "gtr")
 types <- c("nobias", "bias")
 branch_lengths <- c(0.0025, 0.01, 0.04, 0.16, 0.64)
 nreps <- 50
@@ -85,7 +89,7 @@ numrow <- 750000  # Rows per dataframe, calc'd as 5*5*100*50*6 = ntaxa * bl * al
 
 
 
-for (mu in mutypes){
+for (mutype in mutypes){
 
     for (type in types)
     {
