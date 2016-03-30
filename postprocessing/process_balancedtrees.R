@@ -1,16 +1,18 @@
 # SJS
 # Script to merge all dN/dS inferences into a single data frame, one for each simulation set.
-args<-commandArgs(TRUE)
-if (length(args) != 1)
-{
-    stop("Supply the directory where results are stored as a cmd line argument.")
-}
+
+# args<-commandArgs(TRUE)
+# if (length(args) != 1)
+# {
+#     stop("Supply the directory where results are stored as a cmd line argument.")
+# }
 
 
 require(dplyr)
 require(readr)
 require(stringr)
-max_threshold = 9999 # Hyphy assigns this value (or greater, some decimal threshold lots of points out) to parameter upon failure to converge
+max_threshold = 9999     # Hyphy assigns this value (or greater, some decimal threshold lots of points out) to parameter upon failure to converge
+zero_threshold = 1e-15   # My zero threshold
 
 # Clean dN/dS values for those methods which return separate dN and dS (hence divide)
 # Methods include SLAC, FUBAR1, FUBAR2
@@ -63,7 +65,7 @@ clean_dnds_fel2 <- function(df.fel, numcol)
         {
             k <- FALSE
         }
-        else if (dn >= max_threshold | ds >= max_threshold |  dn == Inf | ds ==  Inf)
+        else if (dn >= max_threshold | ds >= max_threshold |  dn == Inf | ds ==  Inf | dS <= zero_threshold)
         {
             k <- FALSE
         }
@@ -78,9 +80,9 @@ clean_dnds_fel2 <- function(df.fel, numcol)
 } 
 
 
-RESULTDIR <- args[1]
-if (str_sub(RESULTDIR, start=-1) != "/"){ RESULTDIR <- paste0(RESULTDIR, "/") }
-
+#RESULTDIR <- args[1]
+#if (str_sub(RESULTDIR, start=-1) != "/"){ RESULTDIR <- paste0(RESULTDIR, "/") }
+RESULTDIR="~/Dropbox/dnds1rate2rate_data_results/results/balancedtrees_results/"
 TRUEDIR <- "../simulation/"
 numcol <- 100
 ntaxa <- 7:11
@@ -110,7 +112,6 @@ for (mutype in mutypes){
                                  "true"      = rep(0, numrow),        # True dN/ddS
                                  "truedn"    = rep(0, numrow),        # True dN
                                  "trueds"    = rep(0, numrow),        # True dS
-                                 "mutype"    = rep(0, numrow),        # either gtr or hky
                                  "type"      = rep(type, numrow),     # nobias, bias
                                  "dnds"      = rep(0, numrow),        # inferred dN/dS
                                  "dn"        = rep(0, numrow),        # inferred dN (If 1-rate method, then same as dN/dS).
@@ -146,7 +147,7 @@ for (mutype in mutypes){
                     fubar2_w = clean_dnds_divide( raw_fubar2_w, numcol )            
 
                     # create data frame per method  
-                    firstpart   <- data.frame("ntaxa" = rep(2^n, numcol), "bl" = rep(bl, numcol), "site" = 1:numcol, "rep" = repl, "true" = true_dnds, "truedn" = true_dn, "trueds" = true_ds, "mutype" = mutype, "type" = rep(type, numcol) )    
+                    firstpart   <- data.frame("ntaxa" = rep(2^n, numcol), "bl" = rep(bl, numcol), "site" = 1:numcol, "rep" = repl, "true" = true_dnds, "truedn" = true_dn, "trueds" = true_ds, "type" = rep(type, numcol) )    
                     temp_fel1   <- cbind(firstpart, data.frame("dnds" = fel1_w, "dn" = fel1_w, "ds" = 1., "method" = rep("FEL1", numcol)))
                     temp_fel2   <- cbind(firstpart, data.frame("dnds" = fel2_w, "dn" = fel2$dN, "ds" = fel2$dS, "method" = rep("FEL2", numcol)))
                     temp_slac1  <- cbind(firstpart, data.frame("dnds" = slac1_w, "dn" = slac$dN, "ds" = mean(slac$dS), "method" = rep("SLAC1", numcol)))

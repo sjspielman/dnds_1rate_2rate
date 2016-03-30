@@ -6,7 +6,7 @@ require(tidyr)
 require(readr)
 source("summary_functions.R")
 
-for (mutype in c("hky"))
+for (mutype in c("gtr", "hky"))
 {
     nobias <- read_csv(paste0("full_results_", mutype, "_nobias.csv"))
     bias   <- read_csv(paste0("full_results_", mutype, "_bias.csv"))
@@ -24,7 +24,7 @@ for (mutype in c("hky"))
     dn.ds.sum      <- rbind(nobias.ds.sum, nobias.dn.sum, bias.ds.sum, bias.dn.sum)
     dn.ds.sum$type <- factor(dn.ds.sum$type, levels=c("nobias", "bias"))
 
-    write_csv(dnds.sum, paste0(mutype, "_dnds_summary.csv"))
-    write_csv(dn.ds.sum, paste0(mutype, "_dn_ds_summary.csv"))
+    write_csv(dnds.sum, paste0("dnds_summary_", mutype, ".csv"))
+    write_csv(dn.ds.sum, paste0("dn_ds_summary_", mutype, ".csv"))
 
 }

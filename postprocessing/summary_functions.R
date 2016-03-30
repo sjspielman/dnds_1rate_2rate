@@ -13,7 +13,7 @@ summarize_dnds <- function(dat, type)
       mutate(estbias = summary(bias.raw)$coeff[1], r = cor.raw[1], rmsd = rmsd.raw[[1]]) %>% 
       select(-bias.raw, -cor.raw, -rmsd.raw) %>% 
       na.omit() %>% mutate(type = type)-> summ
-  
+    summ$rmsd[summ$rmsd >= 1000] <- Inf
     summ
     
 }
@@ -30,7 +30,8 @@ summarize_dn <- function(dat, type)
       mutate(estbias = summary(bias.raw)$coeff[1], r = cor.raw[1], rmsd = rmsd.raw[[1]]) %>% 
       select(-bias.raw, -cor.raw, -rmsd.raw) %>% 
       na.omit() %>% mutate(type = type, parameter = "dn") -> summ
-
+    summ$rmsd[summ$rmsd >= 1000] <- Inf
+    
     summ
     
 }
@@ -47,7 +48,8 @@ summarize_ds <- function(dat, type)
     mutate(estbias = summary(bias.raw)$coeff[1], r = cor.raw[1], rmsd = rmsd.raw[[1]]) %>% 
     select(-bias.raw, -cor.raw, -rmsd.raw) %>% 
     na.omit() %>% mutate(type = type, parameter = "ds") -> summ
-  
+    summ$rmsd[summ$rmsd >= 1000] <- Inf
+    
   summ
 
   }
@@ -65,6 +67,7 @@ summarize_dnds_real <- function(dat)
           rmsd.raw = sqrt(mean((.$true - .$dnds)^2))) %>% 
       mutate(estbias = summary(bias.raw)$coeff[1], r = cor.raw[1], rmsd = rmsd.raw[[1]]) %>%
       select(-bias.raw, -cor.raw, -rmsd.raw) %>% na.omit() -> summ
+    summ$rmsd[summ$rmsd >= 1000] <- Inf
     
     summ
 }
@@ -81,7 +84,8 @@ summarize_dn_real <- function(dat)
       mutate(estbias = summary(bias.raw)$coeff[1], r = cor.raw[1], rmsd = rmsd.raw[[1]]) %>% 
       select(-bias.raw, -cor.raw, -rmsd.raw) %>% 
       na.omit() %>% mutate(parameter = "dn") -> summ
-
+    summ$rmsd[summ$rmsd >= 1000] <- Inf
+    
     summ
     
 }
@@ -97,6 +101,7 @@ summarize_ds_real <- function(dat)
       mutate(estbias = summary(bias.raw)$coeff[1], r = cor.raw[1], rmsd = rmsd.raw[[1]]) %>% 
       select(-bias.raw, -cor.raw, -rmsd.raw) %>% 
       na.omit() %>% mutate(parameter = "ds") -> summ
+    summ$rmsd[summ$rmsd >= 1000] <- Inf
     
     summ
 }
