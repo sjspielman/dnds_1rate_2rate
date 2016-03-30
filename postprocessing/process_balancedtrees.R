@@ -9,6 +9,7 @@ if (length(args) != 1)
 
 require(dplyr)
 require(readr)
+require(stringr)
 max_threshold = 9999 # Hyphy assigns this value (or greater, some decimal threshold lots of points out) to parameter upon failure to converge
 
 # Clean dN/dS values for those methods which return separate dN and dS (hence divide)
@@ -78,10 +79,12 @@ clean_dnds_fel2 <- function(df.fel, numcol)
 
 
 RESULTDIR <- args[1]
+if (str_sub(RESULTDIR, start=-1) != "/"){ RESULTDIR <- paste0(RESULTDIR, "/") }
+
 TRUEDIR <- "../simulation/"
 numcol <- 100
 ntaxa <- 7:11
-mutypes <- c("hky") #, "gtr")
+mutypes <- c("hky", "gtr")
 types <- c("nobias", "bias")
 branch_lengths <- c(0.0025, 0.01, 0.04, 0.16, 0.64)
 nreps <- 50
