@@ -65,7 +65,7 @@ clean_dnds_fel2 <- function(df.fel, numcol)
         {
             k <- FALSE
         }
-        else if (dn >= max_threshold | ds >= max_threshold |  dn == Inf | ds ==  Inf | dS <= zero_threshold)
+        else if (dn >= max_threshold | ds >= max_threshold |  dn == Inf | ds ==  Inf | ds <= zero_threshold) #no convergence
         {
             k <- FALSE
         }
@@ -86,8 +86,8 @@ RESULTDIR="~/Dropbox/dnds1rate2rate_data_results/results/balancedtrees_results/"
 TRUEDIR <- "../simulation/"
 numcol <- 100
 ntaxa <- 7:11
-mutypes <- c("hky", "gtr")
-types <- c("nobias", "bias")
+mutypes <- c("hky")
+types <- c("bias")
 branch_lengths <- c(0.0025, 0.01, 0.04, 0.16, 0.64)
 nreps <- 50
 numrow <- 750000  # Rows per dataframe, calc'd as 5*5*100*50*6 = ntaxa * bl * alnlen * reps * methods

@@ -1,18 +1,18 @@
 # SJS
-args<-commandArgs(TRUE)
-if (length(args) != 1)
-{
-    stop("Supply the directory where counted results are stored as a cmd line argument.")
-}
+# args<-commandArgs(TRUE)
+# if (length(args) != 1)
+# {
+#     stop("Supply the directory where counted results are stored as a cmd line argument.")
+# }
 
 require(dplyr)
 require(readr)
 require(stringr)
 
 
-RESULTDIR <- args[1]
-if (str_sub(RESULTDIR, start=-1) != "/"){ RESULTDIR <- paste0(RESULTDIR, "/") }
-
+#RESULTDIR <- args[1]
+#if (str_sub(RESULTDIR, start=-1) != "/"){ RESULTDIR <- paste0(RESULTDIR, "/") }
+RESULTDIR <- "/Users/sjspielman/Dropbox/dnds1rate2rate_data_results/counted_substitutions/"
 ntaxa <- 7:11
 branch_lengths <- c(0.0025, 0.01, 0.04, 0.16, 0.64)
 nreps <- 50

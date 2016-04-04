@@ -33,7 +33,7 @@ dnds.sum.mean <- dnds.sum %>% group_by(method, ntaxa, bl, type, mu) %>% summariz
 dn.ds.sum.mean <- dn.ds.sum %>% group_by(method, ntaxa, bl, parameter, type, mu) %>% summarize(r = mean(r), estbias = mean(estbias), rmsd = mean(rmsd))
 dnds.sum.mean$method <- factor(dnds.sum.mean$method, levels = method_order)
 dn.ds.sum.mean$method <- factor(dn.ds.sum.mean$method, levels = method_order)
-treelen.dat <- dnds.sum %>% mutate(treelen = 2*(ntaxa-1)*bl) %>% filter(method == "FEL1", treelen > 162, treelen < 164) %>% na.omit() %>% select(-estbias)
+treelen.dat <- dnds.sum %>% mutate(treelen = 2*(ntaxa-1)*bl) %>% filter(method == "FEL1", treelen > 162, treelen < 164) %>% na.omit()
 
 ## Read in data of actual counted substitutions
 gtr.count <- read.csv("substitution_counts_gtr_nobias.csv")
@@ -48,9 +48,10 @@ linmodels <- filter(linmodels, comp %in% comp.order)
 linmodels$model <- factor(linmodels$model, levels = c("r", "rmsd"))
 linmodels$comp <- factor(linmodels$comp, levels = comp.order)
 linmodels$type <- factor(linmodels$type, levels=c("nobias", "bias"), labels=c("No codon bias", "Codon bias"))
+linmodels$mutype <- factor(linmodels$mutype, levels=c("hky", "gtr"), labels=c("HKY", "GTR"))
 
 ### Frequently used legend
-dn.ds.legend.grob <- dn.ds.sum %>% filter(mu == "hky", type == "bias", method == "FUBAR2") %>% ggplot(aes(x = factor(ntaxa), y = r, fill = parameter)) + geom_violin(scale = "width") + scale_fill_manual(values = dn_ds_colors, name = "Parameter", labels = c("dN    ", "dS")) + theme(legend.position = "bottom", legend.key.size = unit(.3, "cm"))
+dn.ds.legend.grob <- dn.ds.sum %>% filter(mu == "HKY", type == "bias", method == "FUBAR2") %>% ggplot(aes(x = factor(ntaxa), y = r, fill = parameter)) + geom_violin(scale = "width") + scale_fill_manual(values = dn_ds_colors, name = "Parameter", labels = c("dN    ", "dS")) + theme(legend.position = "bottom", legend.key.size = unit(.3, "cm"))
 grobs <- ggplotGrob(dn.ds.legend.grob)$grobs
 dn.ds.legend <- grobs[[which(sapply(grobs, function(x) x$name) == "guide-box")]]
 
@@ -136,12 +137,18 @@ theme_set(theme_cowplot() + theme(axis.text.y = element_text(size = 10),
                                   panel.border = element_rect(size = 0.5), 
                                   panel.margin = unit(1.0, "lines")))
 
-dn.r.fel2.hky.sub    <- dn.ds.sum %>% filter(mu == "HKY", type == "bias", method == "FEL2", bl >= 0.01, ntaxa<=1024) %>% ggplot(aes(x = factor(ntaxa), y = r, fill = parameter)) + geom_violin(scale = "width") + facet_grid(~bl, scales = "free_x") + scale_y_continuous(limits=c(-0.1, 1), breaks = c(-0.1, 0.1, 0.3, 0.5, 0.7, 0.9)) + background_grid(major = "xy") + xlab("Number of Taxa") + ylab("Correlation")  + scale_fill_manual(values = dn_ds_colors) + theme(legend.position = "none")
-dn.rmsd.fel2.hky.sub <- dn.ds.sum %>% filter(mu == "HKY", type == "bias", method == "FEL2", bl >= 0.01, ntaxa<=1024, rmsd <= 3) %>% ggplot(aes(x = factor(ntaxa), y = rmsd, fill = parameter)) + geom_violin(scale = "width") + facet_grid(~bl, scales = "free_x") + coord_cartesian(ylim=c(0,3)) + background_grid(major = "xy") + xlab("Number of Taxa") + ylab("RMSD") + scale_fill_manual(values = dn_ds_colors) + theme(legend.position = "none")
+param.r.fel2.hky.sub    <- dn.ds.sum %>% filter(mu == "HKY", type == "bias", method == "FEL2", bl >= 0.01, ntaxa<=1024) %>% ggplot(aes(x = factor(ntaxa), y = r, fill = parameter)) + geom_violin(scale = "width") + facet_grid(~bl, scales = "free_x") + scale_y_continuous(limits=c(-0.1, 1), breaks = c(-0.1, 0.1, 0.3, 0.5, 0.7, 0.9)) + background_grid(major = "xy") + xlab("Number of Taxa") + ylab("Correlation")  + scale_fill_manual(values = dn_ds_colors) + theme(legend.position = "none")
+param.rmsd.fel2.hky.sub <- dn.ds.sum %>% filter(mu == "HKY", type == "bias", method == "FEL2", bl >= 0.01, ntaxa<=1024, rmsd <= 3) %>% ggplot(aes(x = factor(ntaxa), y = rmsd, fill = parameter)) + geom_violin(scale = "width") + facet_grid(~bl, scales = "free_x") + coord_cartesian(ylim=c(0,3)) + background_grid(major = "xy") + xlab("Number of Taxa") + ylab("RMSD") + scale_fill_manual(values = dn_ds_colors) + theme(legend.position = "none")
 
-dn.ds.fel2.hky.sub.legend <- plot_grid(dn.r.fel2.hky.sub , dn.rmsd.fel2.hky.sub, dn.ds.legend, nrow=3, labels = c("A", "B"), rel_heights=c(1,1,0.1))
-save_plot(paste0(PLOTDIR, "dn_ds_corr_violin_fel2_hky_subset.pdf"), dn.ds.fel2.sub.legend, base_width = 6.5, base_height=4.5)
+dn.ds.fel2.hky.sub.legend <- plot_grid(param.r.fel2.hky.sub , param.rmsd.fel2.hky.sub, dn.ds.legend, nrow=3, labels = c("A", "B"), rel_heights=c(1,1,0.1))
+save_plot(paste0(PLOTDIR, "dn_ds_corr_violin_fel2_hky_subset.pdf"), dn.ds.fel2.hky.sub.legend, base_width = 6.5, base_height=4.5)
 
+
+param.r.fel2.gtr.sub    <- dn.ds.sum %>% filter(mu == "GTR", type == "bias", method == "FEL2", bl >= 0.01, ntaxa<=1024) %>% ggplot(aes(x = factor(ntaxa), y = r, fill = parameter)) + geom_violin(scale = "width") + facet_grid(~bl, scales = "free_x") + scale_y_continuous(limits=c(-0.1, 1), breaks = c(-0.1, 0.1, 0.3, 0.5, 0.7, 0.9)) + background_grid(major = "xy") + xlab("Number of Taxa") + ylab("Correlation")  + scale_fill_manual(values = dn_ds_colors) + theme(legend.position = "none")
+param.rmsd.fel2.gtr.sub <- dn.ds.sum %>% filter(mu == "GTR", type == "bias", method == "FEL2", bl >= 0.01, ntaxa<=1024, rmsd <= 3) %>% ggplot(aes(x = factor(ntaxa), y = rmsd, fill = parameter)) + geom_violin(scale = "width") + facet_grid(~bl, scales = "free_x") + coord_cartesian(ylim=c(0,3)) + background_grid(major = "xy") + xlab("Number of Taxa") + ylab("RMSD") + scale_fill_manual(values = dn_ds_colors) + theme(legend.position = "none")
+
+dn.ds.fel2.gtr.sub.legend <- plot_grid(param.r.fel2.gtr.sub , param.rmsd.fel2.gtr.sub, dn.ds.legend, nrow=3, labels = c("A", "B"), rel_heights=c(1,1,0.1))
+save_plot(paste0(PLOTDIR, "dn_ds_corr_violin_fel2_gtr_subset.pdf"), dn.ds.fel2.gtr.sub.legend, base_width = 6.5, base_height=4.5)
 
 
 theme_set(theme_cowplot() + theme(axis.text.y = element_text(size = 10),
@@ -157,17 +164,25 @@ theme_set(theme_cowplot() + theme(axis.text.y = element_text(size = 10),
 
 
 
-dn.r.fubar2 <- dn.ds.sum %>% filter(type == "bias", method == "FUBAR2") %>% ggplot(aes(x = factor(ntaxa), y = r, fill = parameter)) + geom_violin(scale = "width") + facet_grid(~bl, scales = "free_x") + scale_y_continuous(limits=c(-0.1, 1), breaks = c(-0.1, 0.1, 0.3, 0.5, 0.7, 0.9)) + background_grid(major = "xy") + xlab("Number of Taxa") + ylab("Correlation") + scale_fill_manual(values = dn_ds_colors) + theme(legend.position = "none")
-dn.rmsd.fubar2 <- dn.ds.sum %>% filter(type == "bias", method == "FUBAR2", rmsd<=10) %>% ggplot(aes(x = factor(ntaxa), y = rmsd, fill = parameter)) + geom_violin(scale = "width") + facet_grid(~bl, scales = "free_x") + coord_cartesian(ylim=c(0,10)) + background_grid(major = "xy") + xlab("Number of Taxa") + ylab("RMSD") + scale_fill_manual(values = dn_ds_colors) + theme(legend.position = "none")
-dn.r.fel2 <- dn.ds.sum %>% filter(type == "bias", method == "FEL2") %>% ggplot(aes(x = factor(ntaxa), y = r, fill = parameter)) + geom_violin(scale = "width") + facet_grid(~bl, scales = "free_x") + scale_y_continuous(limits=c(-0.1, 1), breaks = c(-0.1, 0.1, 0.3, 0.5, 0.7, 0.9)) + background_grid(major = "xy") + xlab("Number of Taxa") + ylab("Correlation") + scale_fill_manual(values = dn_ds_colors) + theme(legend.position = "none")
-dn.rmsd.fel2 <- dn.ds.sum %>% filter(type == "bias", method == "FEL2", rmsd<=10) %>% ggplot(aes(x = factor(ntaxa), y = rmsd, fill = parameter)) + geom_violin(scale = "width") + facet_grid(~bl, scales = "free_x") + coord_cartesian(ylim=c(0,10)) + background_grid(major = "xy") + xlab("Number of Taxa") + ylab("RMSD") + scale_fill_manual(values = dn_ds_colors) + theme(legend.position = "none")
+param.r.fubar2.gtr <- dn.ds.sum %>% filter(mu == "GTR", type == "bias", method == "FUBAR2") %>% ggplot(aes(x = factor(ntaxa), y = r, fill = parameter)) + geom_violin(scale = "width") + facet_grid(~bl, scales = "free_x") + scale_y_continuous(limits=c(-0.1, 1), breaks = c(-0.1, 0.1, 0.3, 0.5, 0.7, 0.9)) + background_grid(major = "xy") + xlab("Number of Taxa") + ylab("Correlation") + scale_fill_manual(values = dn_ds_colors) + ggtitle("GTR-bias") + theme(legend.position = "none")
+param.r.fubar2.hky <- dn.ds.sum %>% filter(mu == "HKY", type == "bias", method == "FUBAR2") %>% ggplot(aes(x = factor(ntaxa), y = r, fill = parameter)) + geom_violin(scale = "width") + facet_grid(~bl, scales = "free_x") + scale_y_continuous(limits=c(-0.1, 1), breaks = c(-0.1, 0.1, 0.3, 0.5, 0.7, 0.9)) + background_grid(major = "xy") + xlab("Number of Taxa") + ylab("Correlation") + scale_fill_manual(values = dn_ds_colors) + ggtitle("HKY-bias") + theme(legend.position = "none")
+param.rmsd.fubar2.hky <- dn.ds.sum %>% filter(mu == "HKY", type == "bias", method == "FUBAR2") %>% ggplot(aes(x = factor(ntaxa), y = rmsd, fill = parameter)) + geom_violin(scale = "width") + facet_grid(~bl, scales = "free_x") + coord_cartesian(ylim=c(0,5)) + background_grid(major = "xy") + xlab("Number of Taxa") + ylab("RMSD") + scale_fill_manual(values = dn_ds_colors) + ggtitle("HKY-bias") + theme(legend.position = "none")
+param.rmsd.fubar2.gtr <- dn.ds.sum %>% filter(mu == "GTR", type == "bias", method == "FUBAR2") %>% ggplot(aes(x = factor(ntaxa), y = rmsd, fill = parameter)) + geom_violin(scale = "width") + facet_grid(~bl, scales = "free_x") + coord_cartesian(ylim=c(0,5)) + background_grid(major = "xy") + xlab("Number of Taxa") + ylab("RMSD") + scale_fill_manual(values = dn_ds_colors) + ggtitle("GTR-bias") + theme(legend.position = "none")
+param.r.fubar2 <- plot_grid(param.r.fubar2.hky, param.r.fubar2.gtr, nrow=1, labels=c("A", "B"))
+param.rmsd.fubar2 <- plot_grid(param.rmsd.fubar2.hky, param.rmsd.fubar2.gtr, nrow=1, labels=c("C", "D"))
+param.r.rmsd.fubar2 <- plot_grid(param.r.fubar2, param.rmsd.fubar2, dn.ds.legend, nrow=3, rel_heights=c(1,1,0.1))
+save_plot(paste0(PLOTDIR, "dn_ds_r_rmsd_fubar2.pdf"), param.r.rmsd.fubar2, base_width = 12, base_height=5)
 
-fel2.grid <- plot_grid(dn.r.fel2, dn.rmsd.fel2, nrow=1, labels=c("A", "B"))
-fubar2.grid <- plot_grid(dn.r.fubar2, dn.rmsd.fubar2, nrow=1, labels=c("C", "D"))
-full.grid <- plot_grid(fel2.grid, fubar2.grid, dn.ds.legend, rel_heights=c(1,1,0.075), nrow=3)
-save_plot(paste0(PLOTDIR, "dn_ds_r_rmsd_full.pdf"), full.grid, base_width = 13, base_height=5)
 
 
+param.r.fel2.gtr <- dn.ds.sum %>% filter(mu == "GTR", type == "bias", method == "FEL2") %>% ggplot(aes(x = factor(ntaxa), y = r, fill = parameter)) + geom_violin(scale = "width") + facet_grid(~bl, scales = "free_x") + scale_y_continuous(limits=c(-0.1, 1), breaks = c(-0.1, 0.1, 0.3, 0.5, 0.7, 0.9)) + background_grid(major = "xy") + xlab("Number of Taxa") + ylab("Correlation") + scale_fill_manual(values = dn_ds_colors) + ggtitle("GTR-bias") + theme(legend.position = "none")
+param.r.fel2.hky <- dn.ds.sum %>% filter(mu == "HKY", type == "bias", method == "FEL2") %>% ggplot(aes(x = factor(ntaxa), y = r, fill = parameter)) + geom_violin(scale = "width") + facet_grid(~bl, scales = "free_x") + scale_y_continuous(limits=c(-0.1, 1), breaks = c(-0.1, 0.1, 0.3, 0.5, 0.7, 0.9)) + background_grid(major = "xy") + xlab("Number of Taxa") + ylab("Correlation") + scale_fill_manual(values = dn_ds_colors) + ggtitle("HKY-bias") + theme(legend.position = "none")
+param.rmsd.fel2.hky <- dn.ds.sum %>% filter(mu == "HKY", type == "bias", method == "FEL2") %>% ggplot(aes(x = factor(ntaxa), y = rmsd, fill = parameter)) + geom_violin(scale = "width") + facet_grid(~bl, scales = "free_x") + coord_cartesian(ylim=c(0,5)) + background_grid(major = "xy") + xlab("Number of Taxa") + ylab("RMSD") + scale_fill_manual(values = dn_ds_colors) + ggtitle("HKY-bias") + theme(legend.position = "none")
+param.rmsd.fel2.gtr <- dn.ds.sum %>% filter(mu == "GTR", type == "bias", method == "FEL2") %>% ggplot(aes(x = factor(ntaxa), y = rmsd, fill = parameter)) + geom_violin(scale = "width") + facet_grid(~bl, scales = "free_x") + coord_cartesian(ylim=c(0,5)) + background_grid(major = "xy") + xlab("Number of Taxa") + ylab("RMSD") + scale_fill_manual(values = dn_ds_colors) + ggtitle("GTR-bias") + theme(legend.position = "none")
+param.r.fel2 <- plot_grid(param.r.fel2.hky, param.r.fel2.gtr, nrow=1, labels=c("A", "B"))
+param.rmsd.fel2 <- plot_grid(param.rmsd.fel2.hky, param.rmsd.fel2.gtr, nrow=1, labels=c("C", "D"))
+param.r.rmsd.fel2 <- plot_grid(param.r.fel2, param.rmsd.fel2, dn.ds.legend, nrow=3, rel_heights=c(1,1,0.1))
+save_plot(paste0(PLOTDIR, "dn_ds_r_rmsd_fel2.pdf"), param.r.rmsd.fel2, base_width = 12, base_height=5)
 
 
 
