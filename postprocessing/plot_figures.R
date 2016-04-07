@@ -12,34 +12,36 @@ felfubar_colors <- c("red", "darkred", "dodgerblue", "blue")
 dn_ds_colors <- c("red", "dodgerblue")
 
 ### Read in and process data for simulations performed along balanced trees
-dnds.sum.gtr <- read.csv("dnds_summary_gtr.csv")
-dnds.sum.gtr$mu <- "GTR"
-dn.ds.sum.gtr <- read.csv("dn_ds_summary_gtr.csv")
-dn.ds.sum.gtr$mu <- "GTR"
-dnds.sum.hky <- read.csv("dnds_summary_hky.csv")
-dnds.sum.hky$mu <- "HKY"
-dn.ds.sum.hky <- read.csv("dn_ds_summary_hky.csv")
-dn.ds.sum.hky$mu <- "HKY"
-dn.ds.sum <-rbind(dn.ds.sum.gtr, dn.ds.sum.hky)
-dnds.sum <-rbind(dnds.sum.gtr, dnds.sum.hky)
+dnds.sum1 <- read.csv("dnds_summary_equalpi.csv")
+dnds.sum2 <- read.csv("dnds_summary_unequalpi.csv")
+dnds.sum1$pi <- "equalpi"
+dnds.sum2$pi <- "unequalpi"
+dnds.sum <- rbind(dnds.sum1, dnds.sum2)
+
+dn.ds.sum1 <- read.csv("dn_ds_summary_equalpi.csv")
+dn.ds.sum2 <- read.csv("dn_ds_summary_unequalpi.csv")
+dn.ds.sum1$pi <- "equalpi"
+dn.ds.sum2$pi <- "unequalpi"
+dn.ds.sum <- rbind(dn.ds.sum1, dn.ds.sum2)
+
 
 dnds.sum$method <- factor(dnds.sum$method, levels = method_order)
 dn.ds.sum$method <- factor(dn.ds.sum$method, levels = method_order)
-dnds.sum$mu <- factor(dnds.sum$mu, levels = c("HKY", "GTR"))
+dnds.sum$pi <- factor(dnds.sum$mu, levels = c("equalpi", "unequalpi"))
 dn.ds.sum$method <- factor(dn.ds.sum$method, levels = method_order)
-dn.ds.sum$mu <- factor(dn.ds.sum$mu, levels = c("HKY", "GTR"))
+dn.ds.sum$pi <- factor(dn.ds.sum$mu, levels = c("equalpi", "unequalpi"))
 
-dnds.sum.mean <- dnds.sum %>% group_by(method, ntaxa, bl, type, mu) %>% summarize(r = mean(r), estbias = mean(estbias), rmsd = mean(rmsd))
-dn.ds.sum.mean <- dn.ds.sum %>% group_by(method, ntaxa, bl, parameter, type, mu) %>% summarize(r = mean(r), estbias = mean(estbias), rmsd = mean(rmsd))
+dnds.sum.mean <- dnds.sum %>% group_by(method, ntaxa, bl, type, pi) %>% summarize(r = mean(r), estbias = mean(estbias), rmsd = mean(rmsd))
+dn.ds.sum.mean <- dn.ds.sum %>% group_by(method, ntaxa, bl, parameter, type, pi) %>% summarize(r = mean(r), estbias = mean(estbias), rmsd = mean(rmsd))
 dnds.sum.mean$method <- factor(dnds.sum.mean$method, levels = method_order)
 dn.ds.sum.mean$method <- factor(dn.ds.sum.mean$method, levels = method_order)
 treelen.dat <- dnds.sum %>% mutate(treelen = 2*(ntaxa-1)*bl) %>% filter(method == "FEL1", treelen > 162, treelen < 164) %>% na.omit()
 
 ## Read in data of actual counted substitutions
-gtr.count <- read.csv("substitution_counts_gtr_nobias.csv")
-bias.gtr.count <- read.csv("substitution_counts_gtr_bias.csv")
-hky.count <- read.csv("substitution_counts_hky_nobias.csv")
-bias.hky.count <- read.csv("substitution_counts_hky_bias.csv")
+equal.count.nobias <- read.csv("substitution_counts_equalpi_nobias.csv")
+equal.count.nobias <- read.csv("substitution_counts_equalpi_bias.csv")
+unequal.count.bias <- read.csv("substitution_counts_unequalpi_nobias.csv")
+unequal.count.nobias <- read.csv("substitution_counts_unequalpi_bias.csv")
 
 ### Read in and factorize linear model results
 comp.order <- c("FUBAR1 - SLAC1", "FEL1 - SLAC1", "FEL1 - FUBAR1", "SLAC1 - SLAC2", "FUBAR1 - FUBAR2", "FEL1 - FEL2")
@@ -48,10 +50,10 @@ linmodels <- filter(linmodels, comp %in% comp.order)
 linmodels$model <- factor(linmodels$model, levels = c("r", "rmsd"))
 linmodels$comp <- factor(linmodels$comp, levels = comp.order)
 linmodels$type <- factor(linmodels$type, levels=c("nobias", "bias"), labels=c("No codon bias", "Codon bias"))
-linmodels$mutype <- factor(linmodels$mutype, levels=c("hky", "gtr"), labels=c("HKY", "GTR"))
+linmodels$pi   <- factor(linmodels$mutype, levels=c("unequalpi", "equalpi"), labels=c("Unequal F", "Equal F"))
 
 ### Frequently used legend
-dn.ds.legend.grob <- dn.ds.sum %>% filter(mu == "HKY", type == "bias", method == "FUBAR2") %>% ggplot(aes(x = factor(ntaxa), y = r, fill = parameter)) + geom_violin(scale = "width") + scale_fill_manual(values = dn_ds_colors, name = "Parameter", labels = c("dN    ", "dS")) + theme(legend.position = "bottom", legend.key.size = unit(.3, "cm"))
+dn.ds.legend.grob <- dn.ds.sum %>% filter(pi == "equalpi", type == "bias", method == "FUBAR2") %>% ggplot(aes(x = factor(ntaxa), y = r, fill = parameter)) + geom_violin(scale = "width") + scale_fill_manual(values = dn_ds_colors, name = "Parameter", labels = c("dN    ", "dS")) + theme(legend.position = "bottom", legend.key.size = unit(.3, "cm"))
 grobs <- ggplotGrob(dn.ds.legend.grob)$grobs
 dn.ds.legend <- grobs[[which(sapply(grobs, function(x) x$name) == "guide-box")]]
 
@@ -87,15 +89,15 @@ theme_set(theme_cowplot() + theme(axis.text.y = element_text(size = 12),
                                   legend.text = element_text(size=10), 
                                   legend.title = element_text(size=11)))
 
-r.nobias.gtr <- dnds.sum.mean %>% filter(mu == "GTR", type == "nobias") %>% ggplot(aes(x = factor(ntaxa), y = r, group = method, color=method)) +  geom_line(size=0.75, alpha=0.7) + geom_point(size=2, alpha=0.7) + facet_grid(~bl, scales = "free_x") + scale_y_continuous(limits=c(0, 1), breaks = c(0.1, 0.3, 0.5, 0.7, 0.9)) + xlab("Number of Taxa") + ylab("Correlation") + scale_color_manual(values = method_colors, name = "Inference Method") + background_grid("xy") + ggtitle("No codon bias")
-r.bias.gtr <- dnds.sum.mean %>% filter(mu == "GTR", type == "bias") %>% ggplot(aes(x = factor(ntaxa), y = r, group = method, color=method)) +  geom_line(size=0.75, alpha=0.7) + geom_point(size=2, alpha=0.7) + facet_grid(~bl, scales = "free_x") + scale_y_continuous(limits=c(0, 1), breaks = c(0.1, 0.3, 0.5, 0.7, 0.9)) + xlab("Number of Taxa") + ylab("Correlation") + scale_color_manual(values = method_colors, name = "Inference Method") + background_grid("xy") + ggtitle("Codon bias")
-corr.lineplots <- plot_grid(r.nobias.gtr, r.bias.gtr, nrow=2, labels=c("A", "B"))
-save_plot(paste0(PLOTDIR, "correlation_lineplots_gtr.pdf"), corr.lineplots, base_width = 10, base_height=5)
+r.nobias.gtr <- dnds.sum.mean %>% filter(pi == "equalpi", type == "nobias") %>% ggplot(aes(x = factor(ntaxa), y = r, group = method, color=method)) +  geom_line(size=0.75, alpha=0.7) + geom_point(size=2, alpha=0.7) + facet_grid(~bl, scales = "free_x") + scale_y_continuous(limits=c(0, 1), breaks = c(0.1, 0.3, 0.5, 0.7, 0.9)) + xlab("Number of Taxa") + ylab("Correlation") + scale_color_manual(values = method_colors, name = "Inference Method") + background_grid("xy") + ggtitle("No codon bias")
+r.bias.gtr <- dnds.sum.mean %>% filter(pi == "equalpi", type == "bias") %>% ggplot(aes(x = factor(ntaxa), y = r, group = method, color=method)) +  geom_line(size=0.75, alpha=0.7) + geom_point(size=2, alpha=0.7) + facet_grid(~bl, scales = "free_x") + scale_y_continuous(limits=c(0, 1), breaks = c(0.1, 0.3, 0.5, 0.7, 0.9)) + xlab("Number of Taxa") + ylab("Correlation") + scale_color_manual(values = method_colors, name = "Inference Method") + background_grid("xy") + ggtitle("Codon bias")
+corr.lineplots <- plot_grid(r.nobias.equalpi, r.bias.equalpi, nrow=2, labels=c("A", "B"))
+save_plot(paste0(PLOTDIR, "correlation_lineplots_equalpi.pdf"), corr.lineplots, base_width = 10, base_height=5)
 
-r.nobias.hky <- dnds.sum.mean %>% filter(mu == "HKY", type == "nobias") %>% ggplot(aes(x = factor(ntaxa), y = r, group = method, color=method)) +  geom_line(size=0.75, alpha=0.7) + geom_point(size=2, alpha=0.7) + facet_grid(~bl, scales = "free_x") + scale_y_continuous(limits=c(0, 1), breaks = c(0.1, 0.3, 0.5, 0.7, 0.9)) + xlab("Number of Taxa") + ylab("Correlation") + scale_color_manual(values = method_colors, name = "Inference Method") + background_grid("xy") + ggtitle("No codon bias")
-r.bias.hky <- dnds.sum.mean %>% filter(mu == "HKY", type == "bias") %>% ggplot(aes(x = factor(ntaxa), y = r, group = method, color=method)) +  geom_line(size=0.75, alpha=0.7) + geom_point(size=2, alpha=0.7) + facet_grid(~bl, scales = "free_x") + scale_y_continuous(limits=c(0, 1), breaks = c(0.1, 0.3, 0.5, 0.7, 0.9)) + xlab("Number of Taxa") + ylab("Correlation") + scale_color_manual(values = method_colors, name = "Inference Method") + background_grid("xy") + ggtitle("Codon bias")
-corr.lineplots <- plot_grid(r.nobias.hky, r.bias.hky, nrow=2, labels=c("A", "B"))
-save_plot(paste0(PLOTDIR, "correlation_lineplots_hky.pdf"), corr.lineplots, base_width = 10, base_height=5)
+r.nobias.hky <- dnds.sum.mean %>% filter(pi == "unequalpi", type == "nobias") %>% ggplot(aes(x = factor(ntaxa), y = r, group = method, color=method)) +  geom_line(size=0.75, alpha=0.7) + geom_point(size=2, alpha=0.7) + facet_grid(~bl, scales = "free_x") + scale_y_continuous(limits=c(0, 1), breaks = c(0.1, 0.3, 0.5, 0.7, 0.9)) + xlab("Number of Taxa") + ylab("Correlation") + scale_color_manual(values = method_colors, name = "Inference Method") + background_grid("xy") + ggtitle("No codon bias")
+r.bias.hky <- dnds.sum.mean %>% filter(pi == "unequalpi", type == "bias") %>% ggplot(aes(x = factor(ntaxa), y = r, group = method, color=method)) +  geom_line(size=0.75, alpha=0.7) + geom_point(size=2, alpha=0.7) + facet_grid(~bl, scales = "free_x") + scale_y_continuous(limits=c(0, 1), breaks = c(0.1, 0.3, 0.5, 0.7, 0.9)) + xlab("Number of Taxa") + ylab("Correlation") + scale_color_manual(values = method_colors, name = "Inference Method") + background_grid("xy") + ggtitle("Codon bias")
+corr.lineplots <- plot_grid(r.nobias.unequalpi, r.bias.unequalpi, nrow=2, labels=c("A", "B"))
+save_plot(paste0(PLOTDIR, "correlation_lineplots_equalpi.pdf"), corr.lineplots, base_width = 10, base_height=5)
 
 
 
@@ -109,15 +111,15 @@ theme_set(theme_cowplot() + theme(axis.text = element_text(size = 10),
                                   legend.text = element_text(size=10), 
                                   legend.title = element_text(size=11)))
 
-rmsd.nobias.gtr <- dnds.sum %>% filter(mu == "GTR", type == "nobias", bl >=0.04, ntaxa >= 256, method %in% c("FEL1", "FEL2", "FUBAR1", "FUBAR2"), rmsd<=100) %>% ggplot(aes(x = factor(ntaxa), y = rmsd, fill=method)) + geom_violin(scale="width", lwd=0.2) + facet_grid(~bl, scales = "free_x") + scale_y_continuous(limits=c(0, 1.3 )) + xlab("Number of Taxa") + ylab("RMSD") + scale_fill_manual(values = felfubar_colors, name = "Inference Method") + background_grid("xy") + ggtitle("No codon bias")
-rmsd.bias.gtr <- dnds.sum %>% filter(mu == "GTR", type == "bias", bl >=0.04, ntaxa >= 256, method %in% c("FEL1", "FEL2", "FUBAR1", "FUBAR2"), rmsd<=100) %>% ggplot(aes(x = factor(ntaxa), y = rmsd, fill=method)) +  geom_violin(scale="width", lwd=0.2) + facet_grid(~bl, scales = "free_x") + scale_y_continuous(limits=c(0, 2)) + xlab("Number of Taxa") + ylab("RMSD") + scale_fill_manual(values = felfubar_colors, name = "Inference Method") + background_grid("xy") + ggtitle("Codon bias")
-rmsd.violins.gtr <- plot_grid(rmsd.nobias.gtr, rmsd.bias.gtr, nrow=2, labels=c("A", "B"))
-save_plot(paste0(PLOTDIR, "rmsd_violins_gtr.pdf"), rmsd.violins.gtr, base_width = 9, base_height=5)
+rmsd.nobias.gtr <- dnds.sum %>% filter(pi == "equalpi", type == "nobias", bl >=0.04, ntaxa >= 256, method %in% c("FEL1", "FEL2", "FUBAR1", "FUBAR2"), rmsd<=100) %>% ggplot(aes(x = factor(ntaxa), y = rmsd, fill=method)) + geom_violin(scale="width", lwd=0.2) + facet_grid(~bl, scales = "free_x") + scale_y_continuous(limits=c(0, 1.3 )) + xlab("Number of Taxa") + ylab("RMSD") + scale_fill_manual(values = felfubar_colors, name = "Inference Method") + background_grid("xy") + ggtitle("No codon bias")
+rmsd.bias.gtr <- dnds.sum %>% filter(pi == "equalpi", type == "bias", bl >=0.04, ntaxa >= 256, method %in% c("FEL1", "FEL2", "FUBAR1", "FUBAR2"), rmsd<=100) %>% ggplot(aes(x = factor(ntaxa), y = rmsd, fill=method)) +  geom_violin(scale="width", lwd=0.2) + facet_grid(~bl, scales = "free_x") + scale_y_continuous(limits=c(0, 2)) + xlab("Number of Taxa") + ylab("RMSD") + scale_fill_manual(values = felfubar_colors, name = "Inference Method") + background_grid("xy") + ggtitle("Codon bias")
+rmsd.violins.gtr <- plot_grid(rmsd.nobias.equalpi, rmsd.bias.equalpi, nrow=2, labels=c("A", "B"))
+save_plot(paste0(PLOTDIR, "rmsd_violins_equalpi.pdf"), rmsd.violins.gtr, base_width = 9, base_height=5)
 
-rmsd.nobias.hky <- dnds.sum %>% filter(mu == "HKY", type == "nobias", bl >=0.04, ntaxa >= 256, method %in% c("FEL1", "FEL2", "FUBAR1", "FUBAR2"), rmsd<=100) %>% ggplot(aes(x = factor(ntaxa), y = rmsd, fill=method)) + geom_violin(scale="width", lwd=0.2) + facet_grid(~bl, scales = "free_x") + scale_y_continuous(limits=c(0, 1.3 )) + xlab("Number of Taxa") + ylab("RMSD") + scale_fill_manual(values = felfubar_colors, name = "Inference Method") + background_grid("xy") + ggtitle("No codon bias")
-rmsd.bias.hky <- dnds.sum %>% filter(mu == "HKY", type == "bias", bl >=0.04, ntaxa >= 256, method %in% c("FEL1", "FEL2", "FUBAR1", "FUBAR2"), rmsd<=100) %>% ggplot(aes(x = factor(ntaxa), y = rmsd, fill=method)) +  geom_violin(scale="width", lwd=0.2) + facet_grid(~bl, scales = "free_x") + scale_y_continuous(limits=c(0, 2)) + xlab("Number of Taxa") + ylab("RMSD") + scale_fill_manual(values = felfubar_colors, name = "Inference Method") + background_grid("xy") + ggtitle("Codon bias")
-rmsd.violins.hky <- plot_grid(rmsd.nobias.hky, rmsd.bias.hky, nrow=2, labels=c("A", "B"))
-save_plot(paste0(PLOTDIR, "rmsd_violins_hky.pdf"), rmsd.violins.hky, base_width = 9, base_height=5)
+rmsd.nobias.hky <- dnds.sum %>% filter(pi == "unequalpi", type == "nobias", bl >=0.04, ntaxa >= 256, method %in% c("FEL1", "FEL2", "FUBAR1", "FUBAR2"), rmsd<=100) %>% ggplot(aes(x = factor(ntaxa), y = rmsd, fill=method)) + geom_violin(scale="width", lwd=0.2) + facet_grid(~bl, scales = "free_x") + scale_y_continuous(limits=c(0, 1.3 )) + xlab("Number of Taxa") + ylab("RMSD") + scale_fill_manual(values = felfubar_colors, name = "Inference Method") + background_grid("xy") + ggtitle("No codon bias")
+rmsd.bias.hky <- dnds.sum %>% filter(pi == "unequalpi", type == "bias", bl >=0.04, ntaxa >= 256, method %in% c("FEL1", "FEL2", "FUBAR1", "FUBAR2"), rmsd<=100) %>% ggplot(aes(x = factor(ntaxa), y = rmsd, fill=method)) +  geom_violin(scale="width", lwd=0.2) + facet_grid(~bl, scales = "free_x") + scale_y_continuous(limits=c(0, 2)) + xlab("Number of Taxa") + ylab("RMSD") + scale_fill_manual(values = felfubar_colors, name = "Inference Method") + background_grid("xy") + ggtitle("Codon bias")
+rmsd.violins.hky <- plot_grid(rmsd.nobias.unequalpi, rmsd.bias.unequalpi, nrow=2, labels=c("A", "B"))
+save_plot(paste0(PLOTDIR, "rmsd_violins_unequalpi.pdf"), rmsd.violins.unequalpi, base_width = 9, base_height=5)
 
 
 
@@ -137,11 +139,11 @@ theme_set(theme_cowplot() + theme(axis.text.y = element_text(size = 10),
                                   panel.border = element_rect(size = 0.5), 
                                   panel.margin = unit(1.0, "lines")))
 
-param.r.fel2.hky.sub    <- dn.ds.sum %>% filter(mu == "HKY", type == "bias", method == "FEL2", bl >= 0.01, ntaxa<=1024) %>% ggplot(aes(x = factor(ntaxa), y = r, fill = parameter)) + geom_violin(scale = "width") + facet_grid(~bl, scales = "free_x") + scale_y_continuous(limits=c(-0.1, 1), breaks = c(-0.1, 0.1, 0.3, 0.5, 0.7, 0.9)) + background_grid(major = "xy") + xlab("Number of Taxa") + ylab("Correlation")  + scale_fill_manual(values = dn_ds_colors) + theme(legend.position = "none")
-param.rmsd.fel2.hky.sub <- dn.ds.sum %>% filter(mu == "HKY", type == "bias", method == "FEL2", bl >= 0.01, ntaxa<=1024, rmsd <= 3) %>% ggplot(aes(x = factor(ntaxa), y = rmsd, fill = parameter)) + geom_violin(scale = "width") + facet_grid(~bl, scales = "free_x") + coord_cartesian(ylim=c(0,3)) + background_grid(major = "xy") + xlab("Number of Taxa") + ylab("RMSD") + scale_fill_manual(values = dn_ds_colors) + theme(legend.position = "none")
+param.r.fel2.sub    <- dn.ds.sum %>% filter(mu == "unequalpi", type == "bias", method == "FEL2", bl >= 0.01, ntaxa<=1024) %>% ggplot(aes(x = factor(ntaxa), y = r, fill = parameter)) + geom_violin(scale = "width") + facet_grid(~bl, scales = "free_x") + scale_y_continuous(limits=c(-0.1, 1), breaks = c(-0.1, 0.1, 0.3, 0.5, 0.7, 0.9)) + background_grid(major = "xy") + xlab("Number of Taxa") + ylab("Correlation")  + scale_fill_manual(values = dn_ds_colors) + theme(legend.position = "none")
+param.rmsd.fel2y.sub <- dn.ds.sum %>% filter(mu == "unequalpi", type == "bias", method == "FEL2", bl >= 0.01, ntaxa<=1024, rmsd <= 3) %>% ggplot(aes(x = factor(ntaxa), y = rmsd, fill = parameter)) + geom_violin(scale = "width") + facet_grid(~bl, scales = "free_x") + coord_cartesian(ylim=c(0,3)) + background_grid(major = "xy") + xlab("Number of Taxa") + ylab("RMSD") + scale_fill_manual(values = dn_ds_colors) + theme(legend.position = "none")
 
-dn.ds.fel2.hky.sub.legend <- plot_grid(param.r.fel2.hky.sub , param.rmsd.fel2.hky.sub, dn.ds.legend, nrow=3, labels = c("A", "B"), rel_heights=c(1,1,0.1))
-save_plot(paste0(PLOTDIR, "dn_ds_corr_violin_fel2_hky_subset.pdf"), dn.ds.fel2.hky.sub.legend, base_width = 6.5, base_height=4.5)
+dn.ds.fel2.sub.legend <- plot_grid(param.r.fel2.sub , param.rmsd.fel2.sub, dn.ds.legend, nrow=3, labels = c("A", "B"), rel_heights=c(1,1,0.1))
+save_plot(paste0(PLOTDIR, "dn_ds_corr_violin_fel2_subset.pdf"), dn.ds.fel2.sub.legend, base_width = 6.5, base_height=4.5)
 
 
 param.r.fel2.gtr.sub    <- dn.ds.sum %>% filter(mu == "GTR", type == "bias", method == "FEL2", bl >= 0.01, ntaxa<=1024) %>% ggplot(aes(x = factor(ntaxa), y = r, fill = parameter)) + geom_violin(scale = "width") + facet_grid(~bl, scales = "free_x") + scale_y_continuous(limits=c(-0.1, 1), breaks = c(-0.1, 0.1, 0.3, 0.5, 0.7, 0.9)) + background_grid(major = "xy") + xlab("Number of Taxa") + ylab("Correlation")  + scale_fill_manual(values = dn_ds_colors) + theme(legend.position = "none")

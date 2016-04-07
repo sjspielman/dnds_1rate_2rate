@@ -86,20 +86,20 @@ RESULTDIR="~/Dropbox/dnds1rate2rate_data_results/results/balancedtrees_results/"
 TRUEDIR <- "../simulation/"
 numcol <- 100
 ntaxa <- 7:11
-mutypes <- c("hky")
-types <- c("bias")
+pi.types <- c("equalpi", "unequalpi")
+types <- c("nobias", "bias")
 branch_lengths <- c(0.0025, 0.01, 0.04, 0.16, 0.64)
 nreps <- 50
 numrow <- 750000  # Rows per dataframe, calc'd as 5*5*100*50*6 = ntaxa * bl * alnlen * reps * methods
 
 
 
-for (mutype in mutypes){
+for (pi in pi.types){
 
     for (type in types)
     {
     
-        true <- read.csv(paste0(TRUEDIR, "truednds_", mutype, "_", type, ".csv"))
+        true <- read.csv(paste0(TRUEDIR, "truednds_", pi, "_", type, ".csv"))
         true_dnds  <- true$dnds
         true_dn    <- true$dn
         true_ds    <- true$ds
@@ -128,11 +128,11 @@ for (mutype in mutypes){
                 for (repl in 1:nreps){
 
                     # Read in raw results
-                    fel1   <- read.csv(paste(RESULTDIR, "rep", repl, "_n", n, "_bl", bl, "_", mutype, "_", type, "_FEL1.txt", sep=""))        
-                    fel2   <- read.csv(paste(RESULTDIR, "rep", repl, "_n", n, "_bl", bl, "_", mutype, "_", type, "_FEL2.txt", sep=""))        
-                    slac   <- read.table(paste(RESULTDIR, "rep", repl, "_n", n, "_bl", bl, "_", mutype, "_", type, "_SLAC.txt", sep=""), header=T)
-                    fubar1 <- read.csv(paste(RESULTDIR, "rep", repl, "_n", n, "_bl", bl, "_", mutype, "_", type, "_FUBAR1.txt", sep=""))
-                    fubar2 <- read.csv(paste(RESULTDIR, "rep", repl, "_n", n, "_bl", bl, "_", mutype, "_", type, "_FUBAR2.txt", sep=""))
+                    fel1   <- read.csv(paste(RESULTDIR, "rep", repl, "_n", n, "_bl", bl, "_", pi, "_", type, "_FEL1.txt", sep=""))        
+                    fel2   <- read.csv(paste(RESULTDIR, "rep", repl, "_n", n, "_bl", bl, "_", pi, "_", type, "_FEL2.txt", sep=""))        
+                    slac   <- read.table(paste(RESULTDIR, "rep", repl, "_n", n, "_bl", bl, "_", pi, "_", type, "_SLAC.txt", sep=""), header=T)
+                    fubar1 <- read.csv(paste(RESULTDIR, "rep", repl, "_n", n, "_bl", bl, "_", pi, "_", type, "_FUBAR1.txt", sep=""))
+                    fubar2 <- read.csv(paste(RESULTDIR, "rep", repl, "_n", n, "_bl", bl, "_", pi, "_", type, "_FUBAR2.txt", sep=""))
                 
                     # Clean up dN/dS values to replace uninformative with NA
                     fel1_w = clean_dnds_fel1(fel1, numcol)
@@ -163,7 +163,7 @@ for (mutype in mutypes){
             }
         }
         # Save full dataset
-        write_csv(df.results, paste0("full_results_", mutype, "_", type, ".csv"))
+        write_csv(df.results, paste0("full_results_", pi, "_", type, ".csv"))
     }
 }
 

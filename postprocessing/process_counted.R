@@ -16,11 +16,11 @@ RESULTDIR <- "/Users/sjspielman/Dropbox/dnds1rate2rate_data_results/counted_subs
 ntaxa <- 7:11
 branch_lengths <- c(0.0025, 0.01, 0.04, 0.16, 0.64)
 nreps <- 50
-mutypes <- c("hky", "gtr")
+pi.types <- c("equalpi", "unequalpi")
 types <- c("nobias", "bias")
 
 
-for (mutype in mutypes){
+for (pi in pi.types){
 
     for (type in types){
         # Initialize results data frame
@@ -37,7 +37,7 @@ for (mutype in mutypes){
                 print(bl)
                 for (repl in 1:nreps){
 
-                    name <- paste0(RESULTDIR,"rep", repl, "_n", n, "_bl", bl, "_", mutype, "_", type, "_counted.txt")
+                    name <- paste0(RESULTDIR,"rep", repl, "_n", n, "_bl", bl, "_", pi, "_", type, "_counted.txt")
                     counted <- read.table(name, header=T)        
                     ns = counted$ns_changes
                     ss = counted$s_changes
@@ -50,7 +50,7 @@ for (mutype in mutypes){
                 }
             }
         }
-        write_csv(dat, paste0("substitution_counts_", mutype, "_", type, ".csv"))
+        write_csv(dat, paste0("substitution_counts_", pi, "_", type, ".csv"))
     }
 }
 

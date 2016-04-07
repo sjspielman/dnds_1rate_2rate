@@ -88,10 +88,10 @@ fits <- data.frame("comp"    = character(),
                    "model"   = character(),
                    "mutype"  = character())
       
-for (mutype in c("hky", "gtr"))
+for (pi in c("unequalpi", "equalpi"))
 {
     
-    dat.sum <- read_csv(paste0("dnds_summary_", mutype, ".csv"))
+    dat.sum <- read_csv(paste0("dnds_summary_", pi, ".csv"))
     dat.sum %>% filter(bl >= 0.01) %>% na.omit() %>% filter(!is.infinite(rmsd)) -> dat.sum
     
     nobias <- dat.sum %>% na.omit() %>% filter(type == "nobias")
