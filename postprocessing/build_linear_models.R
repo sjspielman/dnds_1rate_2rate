@@ -9,7 +9,7 @@ require(readr)
 
 
 # x is glht object
-extract_multcomp <- function(x, type, model, mutype)
+extract_multcomp <- function(x, model, type, pi)
 {
     confsum <- confint(summary(x))$confint
     testnames <- names(summary(x)$test$tstat)
@@ -71,9 +71,9 @@ extract_multcomp <- function(x, type, model, mutype)
         temp <- data.frame("comp" = comp, "coeff" = coeff, "lowerCI" = lowerCI, "upperCI" = upperCI, "pvalue" = pvalue, "sig" = sig)
         dat <- rbind(dat, temp)
     }
-    dat$type <- type
     dat$model <- model
-    dat$mutype <- mutype
+    dat$type  <- type
+    dat$pi    <- pi
     dat
 }
 
@@ -86,42 +86,32 @@ fits <- data.frame("comp"    = character(),
                    "pvalue"  = numeric(),
                    "sig"     = character(),
                    "model"   = character(),
-                   "mutype"  = character())
+                   "pi"      = character())
       
 for (pi in c("unequalpi", "equalpi"))
 {
     
-    dat.sum <- read_csv(paste0("dnds_summary_", pi, ".csv"))
-    dat.sum %>% filter(bl >= 0.01) %>% na.omit() %>% filter(!is.infinite(rmsd)) -> dat.sum
-    
-    nobias <- dat.sum %>% na.omit() %>% filter(type == "nobias")
-    nobias$method <- factor(nobias$method)
-    bias <- dat.sum %>% na.omit() %>% filter(type == "bias") 
-    bias$method <- factor(bias$method)
+    for (type in c("nobias", "bias"))
+    {
+
+        dat.sum <- read_csv(paste0("dnds_summary_", pi, "_", type, ".csv"))
+        dat.sum %>% filter(bl >= 0.01) %>% na.omit() %>% filter(!is.infinite(rmsd)) -> dat.sum
+        dat.sum$method <- factor(dat.sum$method)
 
     
-    ##################### Correlation linear models #######################
-    
-    fit.nobias <- lmer(r ~ method + (1|ntaxa:bl) + (1|rep), data = nobias)
-    fit.nobias.mc <- glht(fit.nobias, linfct=mcp(method='Tukey'))
-    fits <- rbind(fits, extract_multcomp(fit.nobias.mc, "nobias", "r", mutype))
-    
-    fit.bias1 <- lmer(r ~ method + (1|ntaxa:bl) + (1|rep), data = bias)
-    fit.bias1.mc <- glht(fit.bias1, linfct=mcp(method='Tukey'))
-    fits <- rbind(fits, extract_multcomp(fit.bias1.mc, "bias", "r", mutype))
-    
-    
-    
-    
-    ############### RMSD linear models #################
-    
-    fit.nobias <- lmer(rmsd ~ method + (1|ntaxa:bl) + (1|rep), data = nobias)
-    fit.nobias.mc <- glht(fit.nobias, linfct=mcp(method='Tukey'))
-    fits <- rbind(fits, extract_multcomp(fit.nobias.mc, "nobias", "rmsd", mutype))
-    
-    fit.bias1 <- lmer(rmsd ~ method + (1|ntaxa:bl) + (1|rep), data = bias)
-    fit.bias1.mc <- glht(fit.bias1, linfct=mcp(method='Tukey'))
-    fits <- rbind(fits, extract_multcomp(fit.bias1.mc, "bias", "rmsd", mutype))
-    
-}    
-write.csv(fits, "linear_model_results.csv", quote = F, row.names = F)
+        fit <- lmer(r ~ method + (1|ntaxa:bl) + (1|rep), data = dat.sum)
+        fit.mc <- glht(fit, linfct=mcp(method='Tukey'))
+        fits <- rbind(fits, extract_multcomp(fit.mc, "r", type, pi))
+        
+        fit <- lmer(rmsd ~ method + (1|ntaxa:bl) + (1|rep), data = dat.sum)
+        fit.mc <- glht(fit, linfct=mcp(method='Tukey'))
+        fits <- rbind(fits, extract_multcomp(fit.mc, "rmsd", type, pi))
+
+        fit <- lmer(resvar ~ method + (1|ntaxa:bl) + (1|rep), data = dat.sum)
+        fit.mc <- glht(fit, linfct=mcp(method='Tukey'))
+        fits <- rbind(fits, extract_multcomp(fit.mc, "resvar", type, pi))
+
+  
+    }   
+} 
+    write.csv(fits, "linear_model_results.csv", quote = F, row.names = F)

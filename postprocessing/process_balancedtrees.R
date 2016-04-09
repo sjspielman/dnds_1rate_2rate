@@ -86,8 +86,8 @@ RESULTDIR="~/Dropbox/dnds1rate2rate_data_results/results/balancedtrees_results/"
 TRUEDIR <- "../simulation/"
 numcol <- 100
 ntaxa <- 7:11
-pi.types <- c("equalpi", "unequalpi")
-types <- c("nobias", "bias")
+pi.types <- c( "unequalpi")
+types <- c("bias")
 branch_lengths <- c(0.0025, 0.01, 0.04, 0.16, 0.64)
 nreps <- 50
 numrow <- 750000  # Rows per dataframe, calc'd as 5*5*100*50*6 = ntaxa * bl * alnlen * reps * methods

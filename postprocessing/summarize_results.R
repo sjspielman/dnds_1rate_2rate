@@ -8,23 +8,16 @@ source("summary_functions.R")
 
 for (pi in c("equalpi", "unequalpi"))
 {
-    nobias <- read_csv(paste0("full_results_", pi, "_nobias.csv"))
-    bias   <- read_csv(paste0("full_results_", pi, "_bias.csv"))
+    for (type in c("nobias", "bias"))
+    {
+        full <- read_csv(paste0("full_results_", pi, "_", type, ".csv"))
 
-    nobias.dnds.sum   <- summarize_dnds(nobias, "nobias")
-    bias.dnds.sum     <- summarize_dnds(bias, "bias")
-    dnds.sum          <- rbind(nobias.dnds.sum, bias.dnds.sum)
-    dnds.sum$type     <- factor(dnds.sum$type, levels=c("nobias", "bias"))
-
-
-    nobias.dn.sum  <- summarize_dn(nobias, "nobias")
-    nobias.ds.sum  <- summarize_ds(nobias, "nobias")
-    bias.dn.sum    <- summarize_dn(bias, "bias")
-    bias.ds.sum    <- summarize_ds(bias, "bias")
-    dn.ds.sum      <- rbind(nobias.ds.sum, nobias.dn.sum, bias.ds.sum, bias.dn.sum)
-    dn.ds.sum$type <- factor(dn.ds.sum$type, levels=c("nobias", "bias"))
-
-    write_csv(dnds.sum, paste0("dnds_summary_", pi, ".csv"))
-    write_csv(dn.ds.sum, paste0("dn_ds_summary_", pi, ".csv"))
-
+        dnds.sum   <- summarize_dnds(full, type)
+        dn.sum     <- summarize_dn(full, type)
+        ds.sum     <- summarize_ds(full, type)
+        dn.ds.sum <- rbind(dn.sum, ds.sum)
+    
+        write_csv(dnds.sum, paste0("dnds_summary_", pi, "_", type, ".csv"))
+        write_csv(dn.ds.sum, paste0("dn_ds_summary_", pi, "_", type, ".csv"))
+    }
 }
