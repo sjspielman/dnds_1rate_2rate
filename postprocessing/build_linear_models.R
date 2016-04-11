@@ -6,6 +6,7 @@ require(dplyr)
 require(lme4)
 require(multcomp)
 require(readr)
+require(lmerTest)
 
 
 # x is glht object
@@ -88,14 +89,14 @@ fits <- data.frame("comp"    = character(),
                    "model"   = character(),
                    "pi"      = character())
       
-for (pi in c("unequalpi", "equalpi"))
+for (pi in c("unequal", "equal"))
 {
     
     for (type in c("nobias", "bias"))
     {
 
-        dat.sum <- read_csv(paste0("dnds_summary_", pi, "_", type, ".csv"))
-        dat.sum %>% filter(bl >= 0.01) %>% na.omit() %>% filter(!is.infinite(rmsd)) -> dat.sum
+        dat.sum <- read_csv(paste0("dnds_summary_", pi, "pi_", type, ".csv"))
+        dat.sum %>% filter(bl >= 0.01) %>% na.omit() %>% filter(!is.infinite(rmsd), !is.infinite(resvar)) -> dat.sum
         dat.sum$method <- factor(dat.sum$method)
 
     
@@ -114,4 +115,42 @@ for (pi in c("unequalpi", "equalpi"))
   
     }   
 } 
-    write.csv(fits, "linear_model_results.csv", quote = F, row.names = F)
+write.csv(fits, "linear_model_results.csv", quote = F, row.names = F)
+
+########## Code dump! Difference between equal, unequal, bias, nobias simulations, overall? ###########
+## TL;DR -  Equal and unequal are basically the same (all P>0.01). Bias has lower correlations than does nobias, by all measures.
+# 
+# # Whether the simulation sets show differences?
+# a <- read_csv("dnds_summary_equalpi_nobias.csv")
+# a$pi <- "equal"
+# b <- read_csv("dnds_summary_equalpi_bias.csv")
+# b$pi <- "equal"
+# d <- read_csv("dnds_summary_unequalpi_nobias.csv")
+# d$pi <- "unequal"
+# e <- read_csv("dnds_summary_unequalpi_bias.csv")
+# e$pi <- "unequal"
+# full <- rbind(a,b)
+# full <- rbind(full,d)
+# full <- rbind(full,e)
+# # Note, the following was done for FEL1, FUBAR1, SLAC1. For SLAC1 only, the pi effects were significant, but all magnitudes were on order of 10^-3, so differences are exceedingly minimal.
+# full.fel1 <- full %>% filter(method == "FEL1", bl >= 0.01) %>% na.omit() %>% filter(!is.infinite(rmsd), !is.infinite(resvar))
+# fit <- lmer(r ~ type + pi + (1|ntaxa:bl) + (1|rep), data = full.fel1)
+# summary(fit)
+# #               Estimate Std. Error         df t value Pr(>|t|)    
+# # (Intercept)  6.645e-01  3.943e-02  1.900e+01  16.852 6.68e-13 ***
+# # typenobias   5.395e-02  1.766e-03  3.929e+03  30.540  < 2e-16 ***
+# # piunequal   -7.176e-04  1.766e-03  3.929e+03  -0.406    0.685 
+# 
+# fit <- lmer(rmsd ~ type + pi + (1|ntaxa:bl) + (1|rep), data = full.fel1)
+# summary(fit)
+# #               Estimate Std. Error         df t value Pr(>|t|)    
+# # (Intercept)  3.558e-01  4.079e-02  1.900e+01   8.723 4.43e-08 ***
+# # typenobias  -6.771e-02  2.196e-03  3.978e+03 -30.830  < 2e-16 ***
+# # piunequal   -4.455e-03  2.196e-03  3.978e+03  -2.029   0.0426 *  
+# 
+# fit <- lmer(resvar ~ type + pi + (1|ntaxa:bl) + (1|rep), data = full.fel1)
+# summary(fit)
+# #               Estimate Std. Error         df t value Pr(>|t|)    
+# # (Intercept)  1.648e-01  3.363e-02  1.900e+01   4.900 9.75e-05 ***
+# # typenobias  -5.524e-02  2.913e-03  3.978e+03 -18.966  < 2e-16 ***
+# # piunequal   -3.628e-03  2.913e-03  3.978e+03  -1.246    0.213 

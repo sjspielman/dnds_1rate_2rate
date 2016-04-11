@@ -1,10 +1,10 @@
 # SJS
 # Script to merge all dN/dS inferences into a single data frame, one for each simulation set, for simulations using real trees.
-args<-commandArgs(TRUE)
-if (length(args) != 1)
-{
-    stop("Supply the directory where results are stored as a cmd line argument.")
-}
+#args<-commandArgs(TRUE)
+#if (length(args) != 1)
+#{
+#    stop("Supply the directory where results are stored as a cmd line argument.")
+#}
 
 require(dplyr)
 require(readr)
@@ -48,43 +48,15 @@ clean_dnds_fel1 <- function(df.fel, numcol)
         }
     }
     w
-} 
+}
 
-# Clean dN/dS values for fel2
-clean_dnds_fel2 <- function(df.fel, numcol)
-{   
-    dn <- df.fel$dN
-    ds <- df.fel$dS
-    w <- c()
-    for (i in 1:numcol)
-    {
-        k <- TRUE
-        if (df.fel$LRT[i] == 0 & df.fel$p.value[i] == 1) #uninformative
-        {
-            k <- FALSE
-        }
-        else if (dn >= max_threshold | ds >= max_threshold |  dn == Inf | ds ==  Inf)
-        {
-            k <- FALSE
-        }
-        if (k){ 
-            w <- c(w, dn[i]/ds[i]) 
-        }
-        else{
-            w <- c(w, NA)
-        }
-    }
-    w
-} 
-
-
-RESULTDIR <- args[1]
-if (str_sub(RESULTDIR, start=-1) != "/"){ RESULTDIR <- paste0(RESULTDIR, "/") }
-
+#RESULTDIR <- args[1]
+#if (str_sub(RESULTDIR, start=-1) != "/"){ RESULTDIR <- paste0(RESULTDIR, "/") }
+RESULTDIR <- "~/Dropbox/dnds1rate2rate_data_results/results/realtrees_results/"
 TRUEDIR <- "../simulation/"
 numcol <- 100
 datasets <- c("amine", "h3", "camelid", "vertrho", "hivrt")
-mutype <- "gtr"
+pi <- "unequalpi"
 types <- c("nobias", "bias")
 nreps <- 50
 
@@ -99,15 +71,15 @@ realdat <- data.frame("dataset"   = character(),
                          "dnds"      = numeric(),  # inferred dN/dS
                          "dn"        = numeric(),   # inferred dN (If 1-rate method, then same as dN/dS). NA for FEL2_1, FUBAR2_1
                          "ds"        = numeric(),   # inferred dS (If 1-rate method, then 1, or mean(dS) if SLAC). NA for FEL2_1, FUBAR2_1
-                         "method"    = factor())   # pvalue or pp to indicate which type of value is in the signif column
+                         "method"    = factor())   
 levels(realdat$type) <- as.factor(types)
-levels(realdat$method) <- c("SLAC1", "SLAC2", "FUBAR1", "FUBAR2")
+levels(realdat$method) <- c("FUBAR1", "FUBAR2")
  
 
 for (type in types){
     print(type)
     # Load true simulated dN/dS values
-    true <- read.csv(paste0(TRUEDIR, "truednds_", mutype, "_", type, ".csv"))
+    true <- read.csv(paste0(TRUEDIR, "truednds_", pi, "_", type, ".csv"))
     true_dnds <- true$dnds
     true_dn   <- true$dn
     true_ds   <- true$ds
@@ -117,14 +89,8 @@ for (type in types){
         for (repl in 1:nreps){
             print(repl)
             # Read in raw results
-            slac   <- read.table(paste0(RESULTDIR, "rep", repl, "_", d, "_", mutype, "_", type, "_SLAC.txt"), header=T)
-            fubar1 <- read.csv(paste0(RESULTDIR, "rep", repl, "_", d, "_", mutype, "_", type, "_FUBAR1.txt"))
-            fubar2 <- read.csv(paste0(RESULTDIR, "rep", repl, "_", d, "_", mutype, "_", type, "_FUBAR2.txt"))
-            
-            # Clean up dN/dS values to replace uninformative with NA
-            slac1_w = slac$dN/(mean(slac$dS))
-            raw_slac2_w  = slac$dN/slac$dS
-            slac2_w = clean_dnds_divide( raw_slac2_w, numcol )
+            fubar1 <- read.csv(paste0(RESULTDIR, "rep", repl, "_", d, "_", pi, "_", type, "_FUBAR1.txt"))
+            fubar2 <- read.csv(paste0(RESULTDIR, "rep", repl, "_", d, "_", pi, "_", type, "_FUBAR2.txt"))
             
             raw_fubar1_w = fubar1$beta / fubar1$alpha
             raw_fubar2_w = fubar2$beta / fubar2$alpha               
@@ -133,11 +99,9 @@ for (type in types){
 
             # create data frame per method  
             firstpart   <- data.frame("dataset" = rep(d, numcol), "site" = 1:numcol, "rep" = repl, "true" = true_dnds, "truedn" = true_dn, "trueds" = true_ds, "type" = rep(type, numcol) )    
-            temp_slac1  <- cbind(firstpart, data.frame("dnds" = slac1_w, "dn" = slac$dN, "ds" = mean(slac$dS), "method" = rep("SLAC1", numcol)))
-            temp_slac2  <- cbind(firstpart, data.frame("dnds" = slac2_w, "dn" = slac$dN, "ds" = slac$dS, "method" = rep("SLAC2", numcol)))
             temp_fubar1 <- cbind(firstpart, data.frame("dnds" = fubar1_w, "dn" = fubar1$beta, "ds" = fubar1$alpha, "method" = rep("FUBAR1", numcol)))
             temp_fubar2 <- cbind(firstpart, data.frame("dnds" = fubar2_w, "dn" = fubar2$beta, "ds" = fubar2$alpha, "method" = rep("FUBAR2", numcol)))
-            temp <- rbind(temp_slac1, temp_slac2, temp_fubar1, temp_fubar2)
+            temp <- rbind(temp_fubar1, temp_fubar2)
             realdat <- rbind(realdat, temp)
         }
     }
