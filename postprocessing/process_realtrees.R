@@ -1,10 +1,10 @@
 # SJS
 # Script to merge all dN/dS inferences into a single data frame, one for each simulation set, for simulations using real trees.
-#args<-commandArgs(TRUE)
-#if (length(args) != 1)
-#{
-#    stop("Supply the directory where results are stored as a cmd line argument.")
-#}
+args<-commandArgs(TRUE)
+if (length(args) != 1)
+{
+    stop("Supply the directory where results are stored as a cmd line argument.")
+}
 
 require(dplyr)
 require(readr)
@@ -50,9 +50,8 @@ clean_dnds_fel1 <- function(df.fel, numcol)
     w
 }
 
-#RESULTDIR <- args[1]
-#if (str_sub(RESULTDIR, start=-1) != "/"){ RESULTDIR <- paste0(RESULTDIR, "/") }
-RESULTDIR <- "~/Dropbox/dnds1rate2rate_data_results/results/realtrees_results/"
+RESULTDIR <- args[1]
+if (str_sub(RESULTDIR, start=-1) != "/"){ RESULTDIR <- paste0(RESULTDIR, "/") }
 TRUEDIR <- "../simulation/"
 numcol <- 100
 datasets <- c("amine", "h3", "camelid", "vertrho", "hivrt")

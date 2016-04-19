@@ -1,11 +1,11 @@
 # SJS
 # Script to merge all dN/dS inferences into a single data frame, one for each simulation set.
 
-# args<-commandArgs(TRUE)
-# if (length(args) != 1)
-# {
-#     stop("Supply the directory where results are stored as a cmd line argument.")
-# }
+args<-commandArgs(TRUE)
+if (length(args) != 1)
+{
+     stop("Supply the directory where results are stored as a cmd line argument.")
+}
 
 
 require(dplyr)
@@ -81,9 +81,8 @@ clean_dnds_fel2 <- function(df.fel, numcol)
 } 
 
 
-#RESULTDIR <- args[1]
-#if (str_sub(RESULTDIR, start=-1) != "/"){ RESULTDIR <- paste0(RESULTDIR, "/") }
-RESULTDIR="~/Dropbox/dnds1rate2rate_data_results/results/balancedtrees_results/"
+RESULTDIR <- args[1]
+if (str_sub(RESULTDIR, start=-1) != "/"){ RESULTDIR <- paste0(RESULTDIR, "/") }
 TRUEDIR <- "../simulation/"
 numcol <- 100
 ntaxa <- 7:11
