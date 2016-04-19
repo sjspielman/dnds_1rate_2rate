@@ -13,6 +13,7 @@ require(readr)
 require(stringr)
 max_threshold = 9999     # Hyphy assigns this value (or greater, some decimal threshold lots of points out) to parameter upon failure to converge
 zero_threshold = 1e-15   # My zero threshold
+OUTDIR="dataframes/"
 
 # Clean dN/dS values for those methods which return separate dN and dS (hence divide)
 # Methods include SLAC, FUBAR1, FUBAR2
@@ -163,7 +164,7 @@ for (pi in pi.types){
             }
         }
         # Save full dataset
-        write_csv(df.results, paste0("full_results_", pi, "_", type, ".csv"))
+        write_csv(df.results, paste0(OUTDIR, "full_results_", pi, "_", type, ".csv"))
     }
 }
 

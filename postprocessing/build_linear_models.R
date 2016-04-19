@@ -7,7 +7,7 @@ require(lme4)
 require(multcomp)
 require(readr)
 require(lmerTest)
-
+OUTDIR="dataframes/"
 
 # x is glht object
 extract_multcomp <- function(x, model, type, pi)
@@ -115,7 +115,7 @@ for (pi in c("unequal", "equal"))
   
     }   
 } 
-write.csv(fits, "linear_model_results.csv", quote = F, row.names = F)
+write.csv(fits, paste0(OUTDIR,"linear_model_results.csv"), quote = F, row.names = F)
 
 ########## Code dump! Difference between equal, unequal, bias, nobias simulations, overall? ###########
 ## TL;DR -  Equal and unequal are basically the same (all P>0.01). Bias has lower correlations than does nobias, by all measures.

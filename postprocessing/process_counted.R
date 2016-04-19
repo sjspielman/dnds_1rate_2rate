@@ -8,6 +8,7 @@
 require(dplyr)
 require(readr)
 require(stringr)
+OUTDIR="dataframes/"
 
 
 #RESULTDIR <- args[1]
@@ -50,7 +51,7 @@ for (pi in pi.types){
                 }
             }
         }
-        write_csv(dat, paste0("substitution_counts_", pi, "_", type, ".csv"))
+        write_csv(dat, paste0(OUTDIR, "substitution_counts_", pi, "_", type, ".csv"))
     }
 }
 

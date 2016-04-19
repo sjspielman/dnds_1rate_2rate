@@ -10,7 +10,7 @@ require(dplyr)
 require(readr)
 require(stringr)
 max_threshold = 9999.99 # Hyphy assigns this value (or greater, some decimal threshold lots of points out) to parameter upon failure to converge
-
+OUTDIR="dataframes/"
 
 # Clean dN/dS values for those methods which return separate dN and dS (hence divide)
 # Methods include SLAC, FUBAR1, FUBAR2
@@ -108,7 +108,7 @@ for (type in types){
 }
 
 # Save full dataset
-write.csv(realdat, "full_results_realtrees.csv", quote=F, row.names=F)
+write.csv(realdat, paste0(OUTDIR, "full_results_realtrees.csv"), quote=F, row.names=F)
 
 
 
