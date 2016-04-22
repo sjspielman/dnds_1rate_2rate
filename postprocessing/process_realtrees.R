@@ -8,7 +8,6 @@ if (length(args) != 1)
 
 require(dplyr)
 require(readr)
-require(stringr)
 max_threshold = 9999.99 # Hyphy assigns this value (or greater, some decimal threshold lots of points out) to parameter upon failure to converge
 OUTDIR="dataframes/"
 
