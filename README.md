@@ -1,4 +1,4 @@
-##### Repository for "One-rate models outperform two-rate models for site-specific *dN/dS* estimation" by SJS\*, SW, COW. 
+##### Repository for "A comparison of one-rate and two-rate inference frameworks for site-specific *dN/dS* estimation" by SJS\*, SW, COW. 
 
 ##### Contents of respository:
 
@@ -9,9 +9,9 @@
 
 - [`count_substitutions/`](./count_substitutions) contains code and results for substitutions counted along simulations using ancestral sequences.
 
-- [`postprocessing/`](./postprocessing/) contains R code for statistical analyses, processed results (into CSV files), and figures. The script [`run_all_postprocessing.R`](./postprocessing/run_all_postprocessing.R) will run all steps together (although you might want to comment out certain steps for time-saving considerations, as indicated within this file).
+- [`postprocessing/`](./postprocessing/) contains R code for statistical analyses, processed results (into CSV files), and figures. Note that processed result files are in the subdirectory [dataframes/](./postprocessing/dataframes/), and all figures are in the subdirectory [figures/](./postprocessing/figures/) (further organized into [maintext/](./postprocessing/figures/maintext/) and [SI/](./postprocessing/figures/SI/) for figures in the main text and supplementary info, respectively).
 
 
 Note that all scripts named ``*.sh`` and ``*.slurm`` were used for submitting jobs to TACC.
 
-\*This repository is maintained by SJS. Please file any questions/comments in [Issues](https://github.com/sjspielman/sitewise_dnds_mutsel/issues/).
+\*This repository is maintained by SJS. Please file any questions/comments in [Issues](https://github.com/sjspielman/dnds_1rate_2rate/issues/), or email stephanie.spielman@gmail.com
