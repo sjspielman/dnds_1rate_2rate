@@ -2,15 +2,12 @@
 
 ##### Contents of respository:
 
+- [`count_substitutions/`](./count_substitutions/) contains code and results for substitutions counted along simulations using ancestral sequences.
+- [`dnds_inference/`](./dnds_inference/) contains all HyPhy code and batchfiles for inferring *dN/dS*.
+- [`results/`](./results/) contains all *dN/dS* inference files made by HyPhy, for both simulations along [`balanced trees`](./results/balancedtrees_results/) and [`empirical trees`](./results/realtrees_results/).
 - [`simulation/`](./simulation/) contains all scripts and data files used during sequence simulation.
    - [compute_true_dnds.py](./scripts/compute_true_dnds.py) and [compute_dnds_from_mutsel.py](./scripts/compute_dnds_from_mutsel.py) are used to calculate *dN/dS* from equilibrium frequencies.
-
-- [`dnds_inference/`](./dnds_inference) contains all HyPhy code and batchfiles for inferring *dN/dS*.
-
-- [`count_substitutions/`](./count_substitutions) contains code and results for substitutions counted along simulations using ancestral sequences.
-
 - [`postprocessing/`](./postprocessing/) contains R code for statistical analyses, processed results (into CSV files), and figures. Note that processed result files are in the subdirectory [dataframes/](./postprocessing/dataframes/), and all figures are in the subdirectory [figures/](./postprocessing/figures/) (further organized into [maintext/](./postprocessing/figures/maintext/) and [SI/](./postprocessing/figures/SI/) for figures in the main text and supplementary info, respectively).
-
 
 Note that all scripts named ``*.sh`` and ``*.slurm`` were used for submitting jobs to TACC.
 
