@@ -6,7 +6,6 @@ require(dplyr)
 require(lme4)
 require(multcomp)
 require(readr)
-require(lmerTest)
 OUTDIR="dataframes/"
 
 # x is glht object
