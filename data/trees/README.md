@@ -1,6 +1,6 @@
 ## Balanced trees
 Balanced trees created with the following R code:
-Trees are named as "n<exponent>_bl<branch_length>.tre", where 2^exponent = number of taxa and bl = branch length.
+Trees are named as ``n<exponent>_bl<branch_length>.tre``, where 2^exponent is the number of taxa and bl is the branch length.
 ```r
 require(ape)
 branch_lengths <- c( 0.0025, 0.01, 0.04, 0.16, 0.64 )
