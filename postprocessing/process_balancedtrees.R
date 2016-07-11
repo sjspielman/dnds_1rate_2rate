@@ -36,8 +36,8 @@ clean_dnds_divide <- function(w, numcol)
 
 # Clean dN/dS values for fel1, fubar1
 clean_dnds_fel1 <- function(df.fel, numcol)
-{   
-    
+{
+
     w <- df.fel$dN.dS
     for (i in 1:numcol)
     {
@@ -51,11 +51,11 @@ clean_dnds_fel1 <- function(df.fel, numcol)
         }
     }
     w
-} 
+}
 
 # Clean dN/dS values for fel2
 clean_dnds_fel2 <- function(df.fel, numcol)
-{   
+{
     dn <- df.fel$dN
     ds <- df.fel$dS
     w <- c()
@@ -70,15 +70,15 @@ clean_dnds_fel2 <- function(df.fel, numcol)
         {
             k <- FALSE
         }
-        if (k){ 
-            w <- c(w, dn[i]/ds[i]) 
+        if (k){
+            w <- c(w, dn[i]/ds[i])
         }
         else{
             w <- c(w, NA)
         }
     }
     w
-} 
+}
 
 
 RESULTDIR <- args[1]
@@ -98,12 +98,12 @@ for (pi in pi.types){
 
     for (type in types)
     {
-    
+
         true <- read.csv(paste0(TRUEDIR, "truednds_", pi, "_", type, ".csv"))
         true_dnds  <- true$dnds
         true_dn    <- true$dn
         true_ds    <- true$ds
-    
+
         # Initialize results data frame
         df.results <- data.frame("ntaxa"     = rep(0, numrow),        # number of taxa
                                  "bl"        = rep(0, numrow),        # branch lengths
@@ -128,26 +128,26 @@ for (pi in pi.types){
                 for (repl in 1:nreps){
 
                     # Read in raw results
-                    fel1   <- read.csv(paste(RESULTDIR, "rep", repl, "_n", n, "_bl", bl, "_", pi, "_", type, "_FEL1.txt", sep=""))        
-                    fel2   <- read.csv(paste(RESULTDIR, "rep", repl, "_n", n, "_bl", bl, "_", pi, "_", type, "_FEL2.txt", sep=""))        
+                    fel1   <- read.csv(paste(RESULTDIR, "rep", repl, "_n", n, "_bl", bl, "_", pi, "_", type, "_FEL1.txt", sep=""))
+                    fel2   <- read.csv(paste(RESULTDIR, "rep", repl, "_n", n, "_bl", bl, "_", pi, "_", type, "_FEL2.txt", sep=""))
                     slac   <- read.table(paste(RESULTDIR, "rep", repl, "_n", n, "_bl", bl, "_", pi, "_", type, "_SLAC.txt", sep=""), header=T)
                     fubar1 <- read.csv(paste(RESULTDIR, "rep", repl, "_n", n, "_bl", bl, "_", pi, "_", type, "_FUBAR1.txt", sep=""))
                     fubar2 <- read.csv(paste(RESULTDIR, "rep", repl, "_n", n, "_bl", bl, "_", pi, "_", type, "_FUBAR2.txt", sep=""))
-                
+
                     # Clean up dN/dS values to replace uninformative with NA
                     fel1_w = clean_dnds_fel1(fel1, numcol)
                     fel2_w = clean_dnds_fel2(fel2, numcol)
                     slac1_w = slac$dN/(mean(slac$dS))
                     raw_slac2_w  = slac$dN/slac$dS
                     slac2_w = clean_dnds_divide( raw_slac2_w, numcol )
-                
-                    raw_fubar1_w = fubar1$beta / fubar1$alpha
-                    raw_fubar2_w = fubar2$beta / fubar2$alpha               
-                    fubar1_w = clean_dnds_divide( raw_fubar1_w, numcol )
-                    fubar2_w = clean_dnds_divide( raw_fubar2_w, numcol )            
 
-                    # create data frame per method  
-                    firstpart   <- data.frame("ntaxa" = rep(2^n, numcol), "bl" = rep(bl, numcol), "site" = 1:numcol, "rep" = repl, "true" = true_dnds, "truedn" = true_dn, "trueds" = true_ds, "type" = rep(type, numcol) )    
+                    raw_fubar1_w = fubar1$beta / fubar1$alpha
+                    raw_fubar2_w = fubar2$beta / fubar2$alpha
+                    fubar1_w = clean_dnds_divide( raw_fubar1_w, numcol )
+                    fubar2_w = clean_dnds_divide( raw_fubar2_w, numcol )
+
+                    # create data frame per method
+                    firstpart   <- data.frame("ntaxa" = rep(2^n, numcol), "bl" = rep(bl, numcol), "site" = 1:numcol, "rep" = repl, "true" = true_dnds, "truedn" = true_dn, "trueds" = true_ds, "type" = rep(type, numcol) )
                     temp_fel1   <- cbind(firstpart, data.frame("dnds" = fel1_w, "dn" = fel1_w, "ds" = 1., "method" = rep("FEL1", numcol)))
                     temp_fel2   <- cbind(firstpart, data.frame("dnds" = fel2_w, "dn" = fel2$dN, "ds" = fel2$dS, "method" = rep("FEL2", numcol)))
                     temp_slac1  <- cbind(firstpart, data.frame("dnds" = slac1_w, "dn" = slac$dN, "ds" = mean(slac$dS), "method" = rep("SLAC1", numcol)))
@@ -166,5 +166,3 @@ for (pi in pi.types){
         write_csv(df.results, paste0(OUTDIR, "full_results_", pi, "_", type, ".csv"))
     }
 }
-
-
