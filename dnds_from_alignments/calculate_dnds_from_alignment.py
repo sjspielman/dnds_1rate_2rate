@@ -44,17 +44,31 @@ def compute_dnds(d, mu):
     assert(ds != None), "ds not computed."
     return dn, ds
 
+def build_outline_header(treetype, filename):
+    if treetype == "balanced":
+        get_info = re.search("rep(\d+)_n(\d+)_bl(0\.\d+)_unequalpi_(\w+)\.fasta", filename)
+        if get_info:
+            rep = get_info.group(1)
+            ntaxa = get_info.group(2)
+            bl = get_info.group(3)
+            bias = get_info.group(4)
+        outhead= "," + ntaxa + "," + bl + "," + rep + "," + bias + ","
+
+    elif treetype == "real":
+        get_info = re.search("rep(\d+)_(\w+)_unequalpi_(\w+)\.fasta", filename)
+        if get_info:
+            rep = get_info.group(1)
+            dataset = get_info.group(2)
+            bias = get_info.group(3)
+        outhead= "," + dataset + "," + rep + "," + bias + ","
+    return outhead
 
 
-def extract_dnds(dir, file):
+
+def extract_dnds(dir, file, treetype):
     with open(dir + file, "r") as f:
         aln = AlignIO.read(dir + file, "fasta")
-    get_info = re.search("rep(\d+)_n(\d+)_bl(0\.\d+)_unequalpi_(\w+)\.fasta", file)
-    if get_info:
-        rep = get_info.group(1)
-        ntaxa = get_info.group(2)
-        bl = get_info.group(3)
-        bias = get_info.group(4)
+    outhead = build_outline_header(treetype, file)
     outlines = []
     for x in range(0, len(aln[0]), 3):
         # Create dictionary of codon frequencies
@@ -63,26 +77,30 @@ def extract_dnds(dir, file):
         for c in column:
             c2 = str(c.seq)
             col_codons[c2] += 1./len(aln)
-        assert( sum(col_codons.values()) == 1.), "\nError in frequency calculations from an alignment column."
+        assert( abs(1. - sum(col_codons.values())) <= 1e-8), "\nError in frequency calculations from an alignment column."
 
         # Calculate dn,ds for column
         dn, ds = compute_dnds(col_codons, mu_dict)
-        outline = str(x/3 + 1) + "," + ntaxa + "," + bl + "," + rep + "," + bias + "," + str(dn) + "," + str(ds) + ",empirical"
+        outline = str(x/3 + 1) + outhead + str(dn) + "," + str(ds)
         outlines.append(outline)
     return outlines
 
 def main():
 
-    alignment_directory = "/Users/sjspielman/Dropbox/dnds1rate2rate_data_results/alignments/balanced_trees/" #sys.argv[1]
-    outfile = "dnds_from_balanced_alignments.csv" # unequalpi only
+    treetype =  "real" #sys.argv[1]
+    alignment_directory =  "/Users/sjspielman/Dropbox/dnds1rate2rate_data_results/alignments/" + treetype + "_trees/" #sys.argv[2]
+    outfile = "dnds_from_" + treetype + "_alignments.csv" # unequalpi only
     with open(outfile, "w") as f:
-        f.write("site,ntaxa,bl,rep,type,dn,ds,method\n") #method is "empirical"
+        if treetype == "balanced":
+            f.write("site,ntaxa,bl,rep,biastype,empdn,empds\n")
+        elif treetype == "real":
+            f.write("site,dataset,rep,biastype,empdn,empds\n")
     pitype = "unequalpi"
     files = os.listdir(alignment_directory)
     for file in files:
         if pitype in file and file.endswith(".fasta"):
             print file
-            outlines = extract_dnds(alignment_directory, file)
+            outlines = extract_dnds(alignment_directory, file, treetype)
             with open(outfile, "a") as f:
                 f.write("\n".join(outlines) + "\n")
 main()
