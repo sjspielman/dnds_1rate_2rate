@@ -176,6 +176,10 @@ balanced.dat %>%
 ########## Build summary dataframes ############
 real.dat.with.true <- left_join(real.dat, truednds.piunequal)
 balanced.dat.with.true <- left_join(balanced.dat, truednds)
+empirical.true <- empdnds.balanced %>%
+                    select(-pitype) %>%
+                    left_join(truednds.piunequal) %>%
+                    na.omit()
 
 # Summary of balanced compared to true
 balanced.sum.dnds <- summarize_dnds(balanced.dat.with.true)
@@ -194,12 +198,14 @@ real.sum.dn.ds <- rbind(real.sum.dn, real.sum.ds)
 mean.sum.balanced.emp <- balanced.sum.emp %>% group_by(method, ntaxa, bl, biastype) %>% summarize_means()
 mean.sum.real.emp <- real.sum.emp %>% group_by(method, dataset, biastype) %>% summarize_means()
 mean.sum.real.true.dnds <- real.sum.dnds %>% group_by(method, dataset, biastype) %>% summarize_means()
-mean.sum.real.true.dn.ds <- real.sum.dn.ds %>% group_by(method, dataset, biastype) %>% summarize_means()
+mean.sum.real.true.dn.ds <- real.sum.dn.ds %>% group_by(method, dataset, biastype, parameter) %>% summarize_means()
 mean.sum.balanced.true.dnds <- balanced.sum.dnds %>% group_by(method, ntaxa, bl, biastype, pitype) %>% summarize_means()
-mean.sum.balanced.true.dn.ds <- balanced.sum.dn.ds %>% group_by(method, ntaxa, bl, biastype, pitype) %>% summarize_means()
+mean.sum.balanced.true.dn.ds <- balanced.sum.dn.ds %>% group_by(method, ntaxa, bl, biastype, pitype, parameter) %>% summarize_means()
 
 
 ### Save all the things!
+
+write_csv(empirical.true, paste0(DATADIR,"empirical_and_true_dnds.csv"))
 write_csv(counted.dat, paste0(DATADIR,"substitution_counts.csv"))
 write_csv(balanced.dnds.sum, paste0(DATADIR,"summary_balanced_dnds.csv"))
 write_csv(balanced.dn.ds.sum, paste0(DATADIR,"summary_balanced_dn_ds.csv"))
@@ -208,8 +214,15 @@ write_csv(real.sum.dn.ds, paste0(DATADIR,"summary_real_dn_ds.csv"))
 write_csv(balanced.sum.emp, paste0(DATADIR,"summary_balanced_dnds_empirical.csv"))
 write_csv(real.sum.emp, paste0(DATADIR,"summary_real_dnds_empirical.csv"))
 
-write_csv(real.dat.with.true, paste0(DATADIR,"results_realtrees.csv"))
-balanced.dat.with.true %>% filter(pitype == "equalpi", biastype == "nobias") %>% write_csv(paste0(DATADIR, "results_balancedtrees_nobias_equalpi.csv"))
-balanced.dat.with.true %>% filter(pitype == "equalpi", biastype == "bias") %>% write_csv(paste0(DATADIR, "results_balancedtrees_bias_equalpi.csv"))
-balanced.dat.with.true %>% filter(pitype == "unequalpi", biastype == "nobias") %>% write_csv(paste0(DATADIR, "results_balancedtrees_nobias_unequalpi.csv"))
-balanced.dat.with.true %>% filter(pitype == "unequalpi", biastype == "bias") %>% write_csv(paste0(DATADIR, "results_balancedtrees_bias_unequalpi.csv"))
+write_csv(mean.sum.balanced.emp, paste0(DATADIR,"mean_summary_balanced_empirical.csv"))
+write_csv(mean.sum.real.emp, paste0(DATADIR,"mean_summary_real_empirical.csv"))
+write_csv(mean.sum.real.true.dnds, paste0(DATADIR,"mean_summary_real_dnds.csv"))
+write_csv(mean.sum.real.true.dn.ds, paste0(DATADIR,"mean_summary_real_dn_ds.csv"))
+write_csv(mean.sum.balanced.true.dnds, paste0(DATADIR,"mean_summary_balanced_dnds.csv"))
+write_csv(mean.sum.balanced.true.dn.ds, paste0(DATADIR,"mean_summary_balanced_dn_ds.csv"))
+
+write_csv(real.dat, paste0(DATADIR,"results_realtrees.csv"))
+balanced.dat %>% filter(pitype == "equalpi", biastype == "nobias") %>% write_csv(paste0(DATADIR, "results_balancedtrees_nobias_equalpi.csv"))
+balanced.dat %>% filter(pitype == "equalpi", biastype == "bias") %>% write_csv(paste0(DATADIR, "results_balancedtrees_bias_equalpi.csv"))
+balanced.dat %>% filter(pitype == "unequalpi", biastype == "nobias") %>% write_csv(paste0(DATADIR, "results_balancedtrees_nobias_unequalpi.csv"))
+balanced.dat %>% filter(pitype == "unequalpi", biastype == "bias") %>% write_csv(paste0(DATADIR, "results_balancedtrees_bias_unequalpi.csv"))

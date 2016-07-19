@@ -1,15 +1,16 @@
 # SJS
 # This script builds mixed effects linear models to determine relative accuracy of models/methods.
-# Note that model fits *exclude* the BL=0.0025 condition, as this condition is mostly noise.
+# Note that model fits *exclude* the BL=0.0025 condition.
 
 require(dplyr)
 require(lme4)
 require(multcomp)
 require(readr)
+require(lmerTest) # summary() function with p-value, for heatmap linear models
 OUTDIR="dataframes/"
 
 # x is glht object
-extract_multcomp <- function(x, model, type, pi)
+extract_multcomp <- function(x, model, biastype, pitype, ref)
 {
     confsum <- confint(summary(x))$confint
     testnames <- names(summary(x)$test$tstat)
@@ -70,49 +71,151 @@ extract_multcomp <- function(x, model, type, pi)
         dat <- rbind(dat, temp)
     }
     dat$model    <- model
-    dat$biastype <- type
-    dat$pitype   <- pi
+    dat$biastype <- biastype
+    dat$pitype   <- pitype
+    dat$reference <- ref
     dat
 }
 
 
+#### Linear models for comparison with true (stationary) dN/dS ####
 
-fits <- data.frame("comp"    = character(),
-                   "coeff"   = numeric(),
-                   "lowerCI" = numeric(),
-                   "upperCI" = numeric(),
-                   "pvalue"  = numeric(),
-                   "sig"     = character(),
-                   "model"   = character(),
-                   "pitype"  = character())
+dat <- read_csv("dataframes/summary_balanced_dnds.csv") %>% na.omit()
+dat$method <- factor(dat$method)
 
-for (pitype in c("unequal", "equal"))
+fits <- data.frame("comp"     = character(),
+                   "coeff"    = numeric(),
+                   "lowerCI"  = numeric(),
+                   "upperCI"  = numeric(),
+                   "pvalue"   = numeric(),
+                   "sig"      = character(),
+                   "model"    = character(),
+                   "pitype"   = character(),
+                   "biastype" = character(),
+                   "reference" = character())  # "true" or "empirical"
+
+reference = "true"
+for (pitype in c("unequalpi", "equalpi"))
 {
 
     for (biastype in c("nobias", "bias"))
     {
 
-        dat.sum <- read_csv(paste0("dnds_summary_", pitype, "pi_", biastype, ".csv"))
-        dat.sum %>% filter(bl >= 0.01) %>% na.omit() %>% filter(!is.infinite(rmsd), !is.infinite(resvar)) -> dat.sum
-        dat.sum$method <- factor(dat.sum$method)
+        subdat <- dat %>% filter(pitype == pitype, biastype == biastype)
 
-
-        fit <- lmer(r ~ method + (1|ntaxa:bl) + (1|rep), data = dat.sum)
+        fit <- lmer(r ~ method + (1|ntaxa:bl) + (1|rep), data = subdat)
         fit.mc <- glht(fit, linfct=mcp(method='Tukey'))
-        fits <- rbind(fits, extract_multcomp(fit.mc, "r", type, pi))
+        fits <- rbind(fits, extract_multcomp(fit.mc, "r", biastype, pitype, reference))
 
-        fit <- lmer(rmsd ~ method + (1|ntaxa:bl) + (1|rep), data = dat.sum)
+        subdat <- subdat %>% filter(!is.infinite(rmsd))
+
+        fit <- lmer(rmsd ~ method + (1|ntaxa:bl) + (1|rep), data = subdat)
         fit.mc <- glht(fit, linfct=mcp(method='Tukey'))
-        fits <- rbind(fits, extract_multcomp(fit.mc, "rmsd", type, pi))
-
-        fit <- lmer(resvar ~ method + (1|ntaxa:bl) + (1|rep), data = dat.sum)
-        fit.mc <- glht(fit, linfct=mcp(method='Tukey'))
-        fits <- rbind(fits, extract_multcomp(fit.mc, "resvar", type, pi))
-
-
+        fits <- rbind(fits, extract_multcomp(fit.mc, "rmsd", biastype, pitype, reference))
     }
 }
-write.csv(fits, paste0(OUTDIR,"linear_model_results.csv"), quote = F, row.names = F)
+
+
+reference <- "empirical"
+pitype    <- "unequalpi"
+dat <- read_csv("dataframes/summary_balanced_dnds_empirical.csv") %>%
+        filter(bl >= 0.01) %>%
+        na.omit() %>% filter(!is.infinite(rmsd))
+dat$method <- factor(dat$method)
+for (biastype in c("nobias", "bias"))
+{
+
+  subdat <- dat %>% filter(biastype == biastype)
+
+
+  fit <- lmer(r ~ method + (1|ntaxa:bl) + (1|rep), data = subdat)
+  fit.mc <- glht(fit, linfct=mcp(method='Tukey'))
+  fits <- rbind(fits, extract_multcomp(fit.mc, "r", biastype, pitype, reference))
+
+  fit <- lmer(rmsd ~ method + (1|ntaxa:bl) + (1|rep), data = subdat)
+  fit.mc <- glht(fit, linfct=mcp(method='Tukey'))
+  fits <- rbind(fits, extract_multcomp(fit.mc, "rmsd", biastype, pitype, reference))
+}
+
+
+write_csv(fits, paste0(OUTDIR,"linear_model_results.csv"))
+
+
+
+
+################################################################################
+################# Linear models for heat map figures ###########################
+
+alpha <- 0.05/300 # Correct for 100 models for 3 methods
+
+
+build.heatmap.models <- function(data, methods, title, alpha)
+{
+  data %>%
+    filter(method %in% methods) %>%
+    dplyr::select(-rmsd, -resvar, -estbias) %>%
+    group_by(ntaxa, bl, biastype, pitype) %>%
+    spread(method, r) %>%
+    setNames(c("ntaxa", "bl", "replicate", "biastype", "pitype", "onerate", "tworate")) %>%
+    na.omit() %>%
+    do(tt = t.test(.$onerate, .$tworate, paired=T)) %>%
+    tidy(tt) %>%
+    mutate(r.diff = estimate,
+           sig = as.numeric(p.value <= alpha)) %>%
+    dplyr::select(ntaxa, bl, biastype, pitype, r.diff, sig) %>%
+    mutate(method = title) -> fitted.dat
+
+    fitted.dat
+}
+
+dat <- read_csv("dataframes/summary_balanced_dnds.csv") %>% na.omit() %>% filter(!is.infinite(rmsd))
+
+# Filter uninformative conditions from FEL to avoid lm errors
+fel.dat <- dat %>% filter(bl >= 0.01, !(bl == 0.01 & ntaxa <= 512))
+# NA rows for FEL
+fel.na.rows <-    data.frame(ntaxa = c( rep(128,4),rep(256,4), rep(512,4), rep(1024, 4), rep(2048,4)),
+                             bl = 0.0025,
+                             biastype = rep(c("nobias", "bias"), 10),
+                             pitype = rep(c("equalpi", "unequalpi", "unequalpi", "equalpi"), 5)) %>%
+            rbind(data.frame(ntaxa = c( rep(128,4),rep(256,4), rep(512,4)),
+                             bl = 0.01,
+                             biastype = rep(c("nobias", "bias"), 6),
+                             pitype = rep(c("equalpi", "unequalpi", "unequalpi", "equalpi"), 3))) %>%
+            mutate(r.diff = NA, sig = NA, method = "FEL")
+
+fel.heatmap.data.true <- build.heatmap.models(fel.dat, c("FEL1", "FEL2"), "FEL", alpha) %>% rbind(fel.na.rows) %>% arrange(ntaxa, bl, biastype, pitype)
+heatmap.data.true <-  rbind(fel.heatmap.data.true, build.heatmap.models(dat, c("SLAC1", "SLAC2"), "SLAC", alpha)) %>%
+                      rbind(build.heatmap.models(dat, c("FUBAR1", "FUBAR2"), "FUBAR", alpha))%>%
+                      ungroup() %>%
+                      mutate(reference = "true")
+
+dat <- read_csv("dataframes/summary_balanced_dnds_empirical.csv") %>% na.omit() %>% filter(!is.infinite(rmsd)) %>% mutate(pitype = "unequalpi")
+heatmap.data.empirical <- build.heatmap.models(dat, c("FEL1", "FEL2"), "FEL", alpha) %>%
+                    rbind(build.heatmap.models(dat, c("SLAC1", "SLAC2"), "SLAC", alpha)) %>%
+                    rbind(build.heatmap.models(dat, c("FUBAR1", "FUBAR2"), "FUBAR", alpha)) %>%
+                    mutate(reference = "empirical")
+heatmap.data <- rbind(heatmap.data.true, heatmap.data.empirical)
+write_csv(heatmap.data, paste0(OUTDIR, "linmodels_heatmap_version.csv"))
+#
+# # finding out which FEL comparisons are nonfunctional
+# for (bl in c(0.0025, 0.01, 0.04)){
+#   for (nt in c(128, 256, 512)){
+#     for (bias in c("bias", "nobias")){
+#       for (pi in c("unequalpi", "uequalpi")){
+#         print(c(bl,nt,bias,pi))
+#         if (bl == 0.0025 & ntaxa == 128 & pitype == "unequalpi")next
+#         if (bl == 0.01 & ntaxa == 128 & pitype == "unequalpi")next
+#         if (bl == 0.04 & ntaxa == 128 & pitype == "unequalpi")next
+#         d2 <- fel.dat %>% filter(bl == bl, ntaxa == nt, method %in% c("FEL1", "FEL2")) %>% spread(method,r)
+#         tt <- t.test(d2$FEL1, d2$FEL2, paired=T)
+#         print(tt)
+#       }
+#     }
+#   }
+#
+# }
+#
+
 
 ########## Code dump! Difference between equal, unequal, bias, nobias simulations, overall? ###########
 ## TL;DR -  Equal and unequal are basically the same (all P>0.01). Bias has lower correlations than does nobias, by all measures.

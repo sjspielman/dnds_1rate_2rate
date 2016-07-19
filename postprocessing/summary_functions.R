@@ -60,10 +60,9 @@ summarize_dn  <- function(dat)
           rmsd.raw = sqrt(mean((.$dn - .$truedn)^2))) %>%
       mutate(estbias = summary(bias.raw)$coeff[1], r = cor.raw[1], rmsd = rmsd.raw[[1]], resvar = summary(lm.raw)$sigma^2) %>%
       select(-bias.raw, -rmsd.raw, -lm.raw, -cor.raw) %>%
-      na.omit() %>% mutate(parameter = "dn") -> summ
+      na.omit() %>% mutate(parameter = "dN") -> summ
     summ$rmsd[summ$rmsd >= 1000] <- Inf
     summ$resvar[summ$resvar >= 1000] <- Inf
-
     summ
 
 }
@@ -80,7 +79,7 @@ summarize_ds <- function(dat)
         rmsd.raw = sqrt(mean((.$ds - .$trueds)^2))) %>%
       mutate(estbias = summary(bias.raw)$coeff[1], r = cor.raw[1], rmsd = rmsd.raw[[1]], resvar = summary(lm.raw)$sigma^2) %>%
       select(-bias.raw, -rmsd.raw, -lm.raw, -cor.raw) %>%
-    na.omit() %>% mutate(parameter = "ds") -> summ
+    na.omit() %>% mutate(parameter = "dS") -> summ
     summ$rmsd[summ$rmsd >= 1000] <- Inf
     summ$resvar[summ$resvar >= 1000] <- Inf
 
@@ -121,7 +120,7 @@ summarize_dn_real <- function(dat)
           rmsd.raw = sqrt(mean((.$dn - .$truedn)^2))) %>%
       mutate(estbias = summary(bias.raw)$coeff[1], r = cor.raw[1], rmsd = rmsd.raw[[1]], resvar = summary(lm.raw)$sigma^2) %>%
       select(-bias.raw, -rmsd.raw, -lm.raw, -cor.raw) %>%
-      na.omit() %>% mutate(parameter = "dn") -> summ
+      na.omit() %>% mutate(parameter = "dN") -> summ
     summ$rmsd[summ$rmsd >= 1000] <- Inf
     summ$resvar[summ$resvar >= 1000] <- Inf
 
@@ -140,7 +139,7 @@ summarize_ds_real <- function(dat)
           rmsd.raw = sqrt(mean((.$ds - .$trueds)^2))) %>%
       mutate(estbias = summary(bias.raw)$coeff[1], r = cor.raw[1], rmsd = rmsd.raw[[1]], resvar = summary(lm.raw)$sigma^2) %>%
       select(-bias.raw, -rmsd.raw, -lm.raw, -cor.raw) %>%
-      na.omit() %>% mutate(parameter = "ds") -> summ
+      na.omit() %>% mutate(parameter = "dS") -> summ
     summ$rmsd[summ$rmsd >= 1000] <- Inf
     summ$resvar[summ$resvar >= 1000] <- Inf
 
