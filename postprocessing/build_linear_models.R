@@ -10,7 +10,7 @@ require(lmerTest) # summary() function with p-value, for heatmap linear models
 OUTDIR="dataframes/"
 
 # x is glht object
-extract_multcomp <- function(x, model, biastype, pitype, ref)
+extract_multcomp <- function(x, model, biastype, pitype, alpha)
 {
     confsum <- confint(summary(x))$confint
     testnames <- names(summary(x)$test$tstat)
@@ -51,7 +51,7 @@ extract_multcomp <- function(x, model, biastype, pitype, ref)
 
         coeff <- confsum[i]
         pvalue <- summary(confint(x))$test$pvalues[i]
-        if (pvalue < 0.01){
+        if (pvalue <= alpha){
             sig <- TRUE
         }
         else{
@@ -73,16 +73,15 @@ extract_multcomp <- function(x, model, biastype, pitype, ref)
     dat$model    <- model
     dat$biastype <- biastype
     dat$pitype   <- pitype
-    dat$reference <- ref
     dat
 }
 
 
 #### Linear models for comparison with true (stationary) dN/dS ####
 
-dat <- read_csv("dataframes/summary_balanced_dnds.csv") %>% na.omit()
+dat <- read_csv("dataframes/summary_balanced_dnds.csv") %>% na.omit() %>% filter(bl >= 0.01)
 dat$method <- factor(dat$method)
-
+alpha <- 0.01
 fits <- data.frame("comp"     = character(),
                    "coeff"    = numeric(),
                    "lowerCI"  = numeric(),
@@ -91,10 +90,8 @@ fits <- data.frame("comp"     = character(),
                    "sig"      = character(),
                    "model"    = character(),
                    "pitype"   = character(),
-                   "biastype" = character(),
-                   "reference" = character())  # "true" or "empirical"
+                   "biastype" = character())
 
-reference = "true"
 for (pitype in c("unequalpi", "equalpi"))
 {
 
@@ -105,40 +102,16 @@ for (pitype in c("unequalpi", "equalpi"))
 
         fit <- lmer(r ~ method + (1|ntaxa:bl) + (1|rep), data = subdat)
         fit.mc <- glht(fit, linfct=mcp(method='Tukey'))
-        fits <- rbind(fits, extract_multcomp(fit.mc, "r", biastype, pitype, reference))
+        fits <- rbind(fits, extract_multcomp(fit.mc, "r", biastype, pitype, alpha))
 
         subdat <- subdat %>% filter(!is.infinite(rmsd))
 
         fit <- lmer(rmsd ~ method + (1|ntaxa:bl) + (1|rep), data = subdat)
         fit.mc <- glht(fit, linfct=mcp(method='Tukey'))
-        fits <- rbind(fits, extract_multcomp(fit.mc, "rmsd", biastype, pitype, reference))
+        fits <- rbind(fits, extract_multcomp(fit.mc, "rmsd", biastype, pitype, alpha))
     }
 }
-
-
-reference <- "empirical"
-pitype    <- "unequalpi"
-dat <- read_csv("dataframes/summary_balanced_dnds_empirical.csv") %>%
-        filter(bl >= 0.01) %>%
-        na.omit() %>% filter(!is.infinite(rmsd))
-dat$method <- factor(dat$method)
-for (biastype in c("nobias", "bias"))
-{
-
-  subdat <- dat %>% filter(biastype == biastype)
-
-
-  fit <- lmer(r ~ method + (1|ntaxa:bl) + (1|rep), data = subdat)
-  fit.mc <- glht(fit, linfct=mcp(method='Tukey'))
-  fits <- rbind(fits, extract_multcomp(fit.mc, "r", biastype, pitype, reference))
-
-  fit <- lmer(rmsd ~ method + (1|ntaxa:bl) + (1|rep), data = subdat)
-  fit.mc <- glht(fit, linfct=mcp(method='Tukey'))
-  fits <- rbind(fits, extract_multcomp(fit.mc, "rmsd", biastype, pitype, reference))
-}
-
-
-write_csv(fits, paste0(OUTDIR,"linear_model_results.csv"))
+write_csv(fits, paste0(OUTDIR, "linear_models.csv"))
 
 
 
@@ -184,17 +157,9 @@ fel.na.rows <-    data.frame(ntaxa = c( rep(128,4),rep(256,4), rep(512,4), rep(1
             mutate(r.diff = NA, sig = NA, method = "FEL")
 
 fel.heatmap.data.true <- build.heatmap.models(fel.dat, c("FEL1", "FEL2"), "FEL", alpha) %>% rbind(fel.na.rows) %>% arrange(ntaxa, bl, biastype, pitype)
-heatmap.data.true <-  rbind(fel.heatmap.data.true, build.heatmap.models(dat, c("SLAC1", "SLAC2"), "SLAC", alpha)) %>%
+heatmap.data <-  rbind(fel.heatmap.data.true, build.heatmap.models(dat, c("SLAC1", "SLAC2"), "SLAC", alpha)) %>%
                       rbind(build.heatmap.models(dat, c("FUBAR1", "FUBAR2"), "FUBAR", alpha))%>%
-                      ungroup() %>%
-                      mutate(reference = "true")
-
-dat <- read_csv("dataframes/summary_balanced_dnds_empirical.csv") %>% na.omit() %>% filter(!is.infinite(rmsd)) %>% mutate(pitype = "unequalpi")
-heatmap.data.empirical <- build.heatmap.models(dat, c("FEL1", "FEL2"), "FEL", alpha) %>%
-                    rbind(build.heatmap.models(dat, c("SLAC1", "SLAC2"), "SLAC", alpha)) %>%
-                    rbind(build.heatmap.models(dat, c("FUBAR1", "FUBAR2"), "FUBAR", alpha)) %>%
-                    mutate(reference = "empirical")
-heatmap.data <- rbind(heatmap.data.true, heatmap.data.empirical)
+                      ungroup()
 write_csv(heatmap.data, paste0(OUTDIR, "linmodels_heatmap_version.csv"))
 #
 # # finding out which FEL comparisons are nonfunctional

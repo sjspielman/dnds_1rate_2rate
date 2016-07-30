@@ -13,18 +13,6 @@ zero_threshold = 1e-15   # My zero threshold
 true.path <- "../simulation/"
 DATADIR = "dataframes/"
 
-# Empirical (computed from alignment frequencies) dN/dS, for balanced trees
-empdnds <- read_csv(paste0(DATADIR, "dnds_from_balanced_alignments.csv"))
-empdnds %>% mutate(pitype = "unequalpi",
-                   empdnds = ifelse(empdn/empds >= max_threshold | empdn/empds == Inf, NA, empdn/empds),
-                   ntaxa = 2**ntaxa) -> empdnds.balanced
-
-# Empirical (computed from alignment frequencies) dN/dS, for real trees
-empdnds <- read_csv(paste0(DATADIR, "dnds_from_real_alignments.csv"))
-empdnds %>% mutate(pitype = "unequalpi",
-                   empdnds = ifelse(empdn/empds >= max_threshold | empdn/empds == Inf, NA, empdn/empds)) -> empdnds.real
-
-
 # True dN/dS
 files <- dir(path = true.path, pattern = "truednds*")
 data_frame(filename = files) %>%
@@ -36,8 +24,8 @@ data_frame(filename = files) %>%
          truedn = dn,
          trueds = ds,
          truednds = truedn/trueds) %>%
-  select(-deleteme, -biastype1, -dnds, -dn, -ds) -> truednds
-truednds %>% filter(pitype == "unequalpi") %>% select(-pitype) -> truednds.piunequal
+  dplyr::select(-deleteme, -biastype1, -dnds, -dn, -ds) -> truednds
+truednds %>% filter(pitype == "unequalpi") %>% dplyr::select(-pitype) -> truednds.piunequal
 
 
 # Counted substitutions
@@ -53,8 +41,7 @@ data_frame(filename = files) %>%
          bl = as.numeric(str_replace(bl1, "bl(0.[0-9]+)", "\\1")),
          ncount = ns_changes,
          scount = s_changes) %>%
-  select(-rep1, -ntaxa1, -bl1, -deleteme, -ns_sites, -s_sites, -ns_changes, -s_changes) -> counted.dat
-
+  dplyr::select(-rep1, -ntaxa1, -bl1, -deleteme, -ns_sites, -s_sites, -ns_changes, -s_changes) -> counted.dat
 
 
 ######### Process inferences for real tree simulations ##############
@@ -67,13 +54,13 @@ data_frame(filename = files) %>%
   mutate(dn = beta,
          ds = alpha,
          dnds = ifelse(dn/ds >= max_threshold | dn/ds == Inf, NA, dn/ds)) %>%
-  select(filename, dn, ds, dnds) %>%
+  dplyr::select(filename, dn, ds, dnds) %>%
   group_by(filename) %>%
   mutate(site = 1:n()) %>% ungroup() %>%
   separate(filename, c("rep1", "dataset", "pitype", "biastype", "method1"), sep="_") %>%
   mutate(rep = as.integer(str_replace(rep1, "rep([0-9]+)","\\1")),
          method = str_replace(method1, "(FUBAR[12]).txt", "\\1")) %>%
-  select(-rep1, -method1, -pitype) -> real.dat
+  dplyr::select(-rep1, -method1, -pitype) -> real.dat
 
 
 ######### Process and merge inferences for balanced tree simulations ###########
@@ -87,7 +74,7 @@ data_frame(filename = files) %>%
   mutate(dn = beta,
          ds = alpha,
          dnds = ifelse(dn/ds >= max_threshold | dn/ds == Inf, NA, dn/ds)) %>%
-  select(filename, dn, ds, dnds) -> fubar.raw
+  dplyr::select(filename, dn, ds, dnds) -> fubar.raw
 
 # SLAC12
 files <- dir(path = data.path, pattern = "*SLAC.txt")
@@ -99,14 +86,14 @@ data_frame(filename = files) %>%
   mutate(dn = dN,
          ds = dS,
          dnds = ifelse(dn/ds >= max_threshold | dn/ds == Inf, NA, dn/ds)) %>%
-  select(filename, dn, ds, dnds) %>%
+  dplyr::select(filename, dn, ds, dnds) %>%
   mutate(filename = str_replace(filename, "(.+)SLAC.txt", "\\1SLAC2.txt")) -> slac2.raw
   slac.raw.data %>% group_by(filename) %>%
   mutate(dn = dN,
          ds = mean(dS),
          dnds = ifelse(dn/ds >= max_threshold | dn/ds == Inf, NA, dn/ds)) %>%
   ungroup() %>%
-  select(filename, dn, ds, dnds) %>%
+  dplyr::select(filename, dn, ds, dnds) %>%
   mutate(filename = str_replace(filename, "(.+)SLAC.txt", "\\1SLAC1.txt")) -> slac1.raw
 
 
@@ -120,7 +107,7 @@ data_frame(filename = files) %>%
   mutate(dn = `dN/dS`,
          ds = 1,
          dnds = ifelse( (LRT == 0 & `p-value` == 1 & (dn == 0 | dn == 1)) | dn >= max_threshold | dn == Inf, NA, dn)) %>%
-  select(filename, dn, ds, dnds) -> fel1.raw
+  dplyr::select(filename, dn, ds, dnds) -> fel1.raw
 
 
 # FEL2
@@ -132,7 +119,7 @@ data_frame(filename = files) %>%
   mutate(dn = dN,
          ds = dS,
          dnds = ifelse( (LRT == 0 & `p-value` == 1) | dn >= max_threshold | ds >= max_threshold | dn == Inf | ds ==  Inf | ds <= zero_threshold, NA, dn/ds)) %>%
-  select(filename, dn, ds, dnds) -> fel2.raw
+  dplyr::select(filename, dn, ds, dnds) -> fel2.raw
 
 
 # Merge all of the balanced inferences
@@ -151,35 +138,15 @@ full.balanced.inf %>% group_by(filename) %>%
          ntaxa = 2**(as.integer(str_replace(ntaxa1, "n([0-9]+)", "\\1"))),
          bl = as.numeric(str_replace(bl1, "bl(0.[0-9]+)", "\\1")),
          method = str_replace(method1, "([A-Z]+[12]).txt", "\\1")) %>%
-  select(-rep1, -ntaxa1, -bl1, -method1) -> balanced.dat
+  dplyr::select(-rep1, -ntaxa1, -bl1, -method1) -> balanced.dat
 balanced.dat.with.true <- left_join(balanced.dat, truednds)
-
-
-
-
-
-# Merge balanced and real empirical with inferred
-real.dat %>%
-  left_join(empdnds.real) %>%
-  group_by(dataset, method, rep, biastype) %>%
-  summarize_dnds_empirical() -> real.sum.emp
-balanced.dat %>%
-  filter(pitype == "unequalpi") %>% select(-pitype) %>%
-  left_join(empdnds.balanced) %>%
-  group_by(ntaxa, bl, method, rep, biastype) %>%
-  summarize_dnds_empirical() -> balanced.sum.emp
-
-
 
 
 
 ########## Build summary dataframes ############
 real.dat.with.true <- left_join(real.dat, truednds.piunequal)
 balanced.dat.with.true <- left_join(balanced.dat, truednds)
-empirical.true <- empdnds.balanced %>%
-                    select(-pitype) %>%
-                    left_join(truednds.piunequal) %>%
-                    na.omit()
+counted.dat.with.true <- left_join(counted.dat, truednds)
 
 # Summary of balanced compared to true
 balanced.sum.dnds <- summarize_dnds(balanced.dat.with.true)
@@ -195,8 +162,6 @@ real.sum.ds <- summarize_ds_real(real.dat.with.true)
 real.sum.dn.ds <- rbind(real.sum.dn, real.sum.ds)
 
 # Mean of summaries
-mean.sum.balanced.emp <- balanced.sum.emp %>% group_by(method, ntaxa, bl, biastype) %>% summarize_means()
-mean.sum.real.emp <- real.sum.emp %>% group_by(method, dataset, biastype) %>% summarize_means()
 mean.sum.real.true.dnds <- real.sum.dnds %>% group_by(method, dataset, biastype) %>% summarize_means()
 mean.sum.real.true.dn.ds <- real.sum.dn.ds %>% group_by(method, dataset, biastype, parameter) %>% summarize_means()
 mean.sum.balanced.true.dnds <- balanced.sum.dnds %>% group_by(method, ntaxa, bl, biastype, pitype) %>% summarize_means()
@@ -204,18 +169,12 @@ mean.sum.balanced.true.dn.ds <- balanced.sum.dn.ds %>% group_by(method, ntaxa, b
 
 
 ### Save all the things!
-
-write_csv(empirical.true, paste0(DATADIR,"empirical_and_true_dnds.csv"))
-write_csv(counted.dat, paste0(DATADIR,"substitution_counts.csv"))
-write_csv(balanced.dnds.sum, paste0(DATADIR,"summary_balanced_dnds.csv"))
-write_csv(balanced.dn.ds.sum, paste0(DATADIR,"summary_balanced_dn_ds.csv"))
+write_csv(counted.dat.with.true, paste0(DATADIR,"substitution_counts.csv"))
+write_csv(balanced.sum.dnds, paste0(DATADIR,"summary_balanced_dnds.csv"))
+write_csv(balanced.sum.dn.ds, paste0(DATADIR,"summary_balanced_dn_ds.csv"))
 write_csv(real.sum.dnds, paste0(DATADIR,"summary_real_dnds.csv"))
 write_csv(real.sum.dn.ds, paste0(DATADIR,"summary_real_dn_ds.csv"))
-write_csv(balanced.sum.emp, paste0(DATADIR,"summary_balanced_dnds_empirical.csv"))
-write_csv(real.sum.emp, paste0(DATADIR,"summary_real_dnds_empirical.csv"))
 
-write_csv(mean.sum.balanced.emp, paste0(DATADIR,"mean_summary_balanced_empirical.csv"))
-write_csv(mean.sum.real.emp, paste0(DATADIR,"mean_summary_real_empirical.csv"))
 write_csv(mean.sum.real.true.dnds, paste0(DATADIR,"mean_summary_real_dnds.csv"))
 write_csv(mean.sum.real.true.dn.ds, paste0(DATADIR,"mean_summary_real_dn_ds.csv"))
 write_csv(mean.sum.balanced.true.dnds, paste0(DATADIR,"mean_summary_balanced_dnds.csv"))

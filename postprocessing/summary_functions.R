@@ -6,28 +6,10 @@ summarize_means <- function(dat)
 {
   dat %>%
   na.omit() %>% filter(!is.infinite(rmsd), !is.infinite(resvar)) %>%
-  summarize(r = mean(r), estbias = mean(estbias), rmsd = mean(rmsd)) -> dat2
+  summarize(r = mean(r), estbias = mean(estbias), rmsd = mean(rmsd), resvar = mean(resvar)) -> dat2
   dat2
 }
 
-summarize_dnds_empirical <- function(dat)
-{
-  dat %>%
-  na.omit() %>% filter(!is.infinite(dnds), !is.infinite(empdnds)) %>%
-  do( bias.raw = glm(dnds ~ offset(empdnds), dat = .),
-      cor.raw = cor(.$dnds, .$empdnds),
-      lm.raw   = lm(dnds ~ empdnds, dat = .),
-      rmsd.raw = sqrt(mean((.$empdnds - .$dnds)^2))) %>%
-  mutate(estbias = summary(bias.raw)$coeff[1],
-         r = cor.raw[1],
-         rmsd = rmsd.raw[[1]],
-         resvar = summary(lm.raw)$sigma^2) %>%
-  select(-bias.raw, -rmsd.raw, -lm.raw, -cor.raw) %>%
-  na.omit() -> sumdat
-  sumdat$rmsd[sumdat$rmsd >= 1000] <- Inf
-  sumdat$resvar[sumdat$resvar >= 1000] <- Inf
-  sumdat
-}
 
 summarize_dnds <- function(dat)
 {
@@ -39,7 +21,10 @@ summarize_dnds <- function(dat)
           cor.raw = cor(.$dnds, .$truednds),
           lm.raw   = lm(dnds ~ truednds, dat = .),
           rmsd.raw = sqrt(mean((.$truednds - .$dnds)^2))) %>%
-      mutate(estbias = summary(bias.raw)$coeff[1], r = cor.raw[1], rmsd = rmsd.raw[[1]], resvar = summary(lm.raw)$sigma^2) %>%
+      mutate(estbias = summary(bias.raw)$coeff[1],
+             r = cor.raw[1],
+             rmsd = rmsd.raw[[1]],
+             resvar = summary(lm.raw)$sigma^2) %>%
       select(-bias.raw, -rmsd.raw, -lm.raw, -cor.raw) %>%
       na.omit() -> summ
     summ$rmsd[summ$rmsd >= 1000] <- Inf
