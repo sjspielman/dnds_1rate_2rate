@@ -339,6 +339,20 @@ heatmap.true.grid2 <- plot_grid(heatmap.true.grid, heatmap.legend, nrow=2, rel_h
 save_plot(paste0(PLOTDIR, "heatmap.pdf"), heatmap.true.grid2, base_width = 16, base_height=7)
 
 
+
+####################################################################################################
+############################### Violins of optimized branch lengths  ###############################
+####################################################################################################
+
+bl <- read.csv(paste0(DATADIR, "optimized_bl.csv"))
+bl$biastype <- factor(bl$biastype, levels=c("nobias", "bias"), labels=c("No codon bias", "Codon bias"))
+opt.bl <- ggplot(bl, aes(y = meanbl, x = factor(ntaxa))) +
+           facet_grid(biastype~bl) +
+           geom_violin(alpha=0.8, scale = "width", fill="grey70") +
+           xlab("Number of Taxa") + ylab("Mean optimized branch length") +
+           theme(axis.text.x = element_text(angle=30, size=10))
+save_plot(paste0(PLOTDIR, "optimized_bl_violins.pdf"), opt.bl, base_width = 8, base_height=4.5)
+
 ####################################################################################################
 ########################### Scatterplots of dN vs. dN and dN/dS vs. dN/dS  #########################
 ####################################################################################################
