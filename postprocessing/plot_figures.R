@@ -7,7 +7,7 @@ require(ggrepel)
 require(broom)
 
 
-PLOTDIR <- "hayomfigures/"
+PLOTDIR <- "figures/"
 DATADIR <- "dataframes/"
 method_order  <- c("SLAC1", "FEL1", "FUBAR1", "SLAC2", "FEL2", "FUBAR2")
 method_colors <- c("deeppink3", "red", "darkred", "skyblue", "dodgerblue", "blue")
@@ -25,6 +25,7 @@ dn.ds.sum      <- read_csv(paste0(DATADIR, "summary_balanced_dn_ds.csv"))
 real.dnds.sum  <- read_csv(paste0(DATADIR, "summary_real_dnds.csv"))
 real.dn.ds.sum <- read_csv(paste0(DATADIR, "summary_real_dn_ds.csv"))
 counted        <- read_csv(paste0(DATADIR, "substitution_counts.csv"))
+counted.real   <- read_csv(paste0(DATADIR, "substitution_counts_realtrees.csv"))
 
 dnds.sum.mean$method  <- factor(dnds.sum.mean$method, levels = method_order)
 dn.ds.sum.mean$method <- factor(dn.ds.sum.mean$method, levels = method_order)
@@ -49,13 +50,22 @@ linmodels.heatmap$biastype <- factor(linmodels.heatmap$biastype, levels=c("nobia
 
 treelen.dat <- dnds.sum %>% mutate(treelen = 2*(ntaxa-1)*bl) %>% filter(method == "FEL1", treelen > 162, treelen < 164) %>% na.omit()
 
+# process balanced counts
 counted <- counted %>% mutate(nscount.ratio = ncount/scount) %>% select(-ncount, -scount) %>% na.omit() %>% filter(!is.infinite(nscount.ratio))
-
 counted.sitewise <- counted %>%
                       group_by(pitype, biastype, site, truednds, ntaxa, bl) %>%
                       summarize(mean_ratio = mean(nscount.ratio))
 counted.repwise <- counted %>%
                       group_by(pitype, biastype, rep, ntaxa, bl) %>%
+                      summarize(mean_ratio = mean(nscount.ratio))
+
+# process real counts
+counted.real <- counted.real %>% mutate(nscount.ratio = ncount/scount) %>% select(-ncount, -scount) %>% na.omit() %>%filter(!is.infinite(nscount.ratio))
+counted.real.sitewise <- counted.real %>%
+                      group_by(biastype, site, truednds, dataset) %>%
+                      summarize(mean_ratio = mean(nscount.ratio))
+counted.real.repwise <- counted.real %>%
+                      group_by(biastype, rep, dataset) %>%
                       summarize(mean_ratio = mean(nscount.ratio))
 
 raw.bias <- read_csv(paste0(DATADIR, "results_balancedtrees_bias_unequalpi.csv"), col_types = list(
@@ -476,32 +486,36 @@ save_plot(paste0(PLOTDIR, "counted_ratio_boxplots.pdf"), unequal.count.withlegen
 ############################# Counted substitutions vs true dN/dS ##################################
 ####################################################################################################
 
-### Plot of *site-specific* N:S ratios. Small plot for maintext and larger for SI
-
-counted.sitewise %>%
-  filter(pitype == "unequalpi", biastype == "nobias") %>%
-  ggplot(aes(x = truednds, group=truednds, y = mean_ratio)) + geom_point() +
-  facet_grid(ntaxa~bl) +
-  geom_hline(yintercept=1, color="red") +
-  xlab("True dN/dS") + ylab("Mean N/S substitutions") + ggtitle("No codon bias") -> p.nobias
-counted.sitewise %>%
-  filter(pitype == "unequalpi", biastype == "bias") %>%
-  ggplot(aes(x = truednds, group=truednds, y = mean_ratio)) + geom_point() +
-  facet_grid(ntaxa~bl) +
-  geom_hline(yintercept=1, color="red") +
-  xlab("True dN/dS") + ylab("Mean N/S substitutions") + ggtitle("Codon bias") -> p.bias
-p.grid <- plot_grid(p.nobias, p.bias, nrow=1)
-save_plot(paste0(PLOTDIR,"sitewisecounts_vs_truednds_full.pdf"), p.grid, base_width = 12, base_height=5)
-
-
 counted.sitewise %>% filter(pitype == "unequalpi", bl == 0.04, ntaxa == 512) -> sub.counted.sitewise
+counted.sitewise %>%
+  filter(mean_ratio > 1e-10, pitype == "unequalpi") %>%
+  group_by(biastype, ntaxa, bl) %>%
+  do(tidy(lm(truednds ~ mean_ratio, data=.))) %>%
+  dplyr::select(-std.error, -statistic, -p.value) %>%
+  summarize(intercept = sum(estimate)) -> dnds.nsratio.intercept
+dnds.nsratio.intercept$biastype <- factor(dnds.nsratio.intercept$biastype, levels=c("nobias", "bias"), labels=c("No codon bias", "Codon bias"))
 sub.counted.sitewise$biastype <- factor(sub.counted.sitewise$biastype, levels=c("nobias", "bias"), labels=c("No codon bias", "Codon bias"))
+
 sub.counted.sitewise %>%
   ggplot(aes(x = truednds, group=truednds, y = mean_ratio)) + geom_point() +
-  facet_grid(~biastype) +
   geom_hline(yintercept=1, color="red") +
-  xlab("True dN/dS") + ylab("Mean N/S substitutions") -> p.sub
-save_plot(paste0(PLOTDIR,"sitewisecounts_vs_truednds_subset.pdf"), p.sub, base_width = 6, base_height=3)
+  facet_grid(~biastype) +
+  scale_y_continuous(limits=c(0,6), breaks=c(0,1,2,3,4,5,6)) +
+  scale_x_continuous(limits=c(0,1.1)) +  xlab("True dN/dS") + ylab("Mean N/S substitutions") -> true.ratio.scatter
+
+dnds.nsratio.intercept %>%
+  ggplot(aes(x = as.factor(ntaxa), y = intercept, group = as.factor(bl), color = as.factor(bl))) +
+    geom_line(size=0.75, alpha=0.8) + geom_point(size=2.75, alpha=0.8) +
+    scale_color_hue(l=40, name = "Branch Lengths     ") +
+    facet_grid(~biastype) +
+    background_grid("xy") +
+    scale_y_continuous(limits=c(0.2, 1.1)) +
+    xlab("Number of Taxa") + ylab("dN/dS at Intercept") +
+    theme(legend.position = "bottom") -> true.intercept
+
+
+nsratio.intercept.grid <- plot_grid(true.ratio.scatter, true.intercept, nrow=2, labels="AUTO")
+save_plot(paste0(PLOTDIR,"truednds_counts_intercept.pdf"), nsratio.intercept.grid, base_width = 7, base_height=6.5)
 
 
 

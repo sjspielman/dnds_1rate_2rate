@@ -49,6 +49,13 @@ count.grob1 <- ggplot(counted.repwise, aes(x = as.factor(ntaxa), y = mean_ratio,
 count.grob <- ggplotGrob(count.grob1)$grobs
 count.legend <- count.grob[[which(sapply(count.grob, function(x) x$name) == "guide-box")]]
 
+count.grob1 <- ggplot(counted.repwise, aes(x = as.factor(ntaxa), y = mean_ratio, color = as.factor(bl))) +
+                 geom_line(size=0.75) + geom_point(size=2) +
+                 scale_color_hue(l=40, name = "Branch Lengths   ") +
+                 theme(legend.position = "bottom", legend.text = element_text(size=11), legend.title = element_text(size=12))
+count.grob <- ggplotGrob(count.grob1)$grobs
+count.legend.ptline <- count.grob[[which(sapply(count.grob, function(x) x$name) == "guide-box")]]
+
 
 # dummy <- data.frame(x = 1:5, y = unique(counted.sitewise$bl))
 # ggplot(dummy, aes(x=x, y=y,color=as.factor(y))) + geom_point() + geom_line() +

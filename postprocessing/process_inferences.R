@@ -28,7 +28,7 @@ data_frame(filename = files) %>%
 truednds %>% filter(pitype == "unequalpi") %>% dplyr::select(-pitype) -> truednds.piunequal
 
 
-# Counted substitutions
+# Counted substitutions, balanced trees
 counted.path <- "/Users/sjspielman/Dropbox/dnds1rate2rate_data_results/counted_substitutions/"
 files <- dir(path = counted.path, pattern = "*counted.txt")
 data_frame(filename = files) %>%
@@ -43,6 +43,18 @@ data_frame(filename = files) %>%
          scount = s_changes) %>%
   dplyr::select(-rep1, -ntaxa1, -bl1, -deleteme, -ns_sites, -s_sites, -ns_changes, -s_changes) -> counted.dat
 
+# Counted substitutions, real trees
+counted.path <- "/Users/sjspielman/Dropbox/dnds1rate2rate_data_results/counted_substitutions/realtrees/"
+files <- dir(path = counted.path, pattern = "*counted.txt")
+data_frame(filename = files) %>%
+  mutate(file_contents = map(filename,
+           ~ read_tsv(file.path(counted.path, .)))) %>%
+  unnest() %>%
+  separate(filename, c("rep", "dataset", "pitype", "biastype", "deleteme"), sep="_") %>%
+  mutate(rep = as.integer(str_replace(rep, "rep([0-9]+)","\\1")),
+         ncount = ns_changes,
+         scount = s_changes) %>%
+  dplyr::select(-deleteme, -ns_sites, -s_sites, -ns_changes, -s_changes) -> counted.realdat
 
 ######### Process inferences for real tree simulations ##############
 data.path <- "../results/realtrees_results/"
@@ -147,6 +159,7 @@ balanced.dat.with.true <- left_join(balanced.dat, truednds)
 real.dat.with.true <- left_join(real.dat, truednds.piunequal)
 balanced.dat.with.true <- left_join(balanced.dat, truednds)
 counted.dat.with.true <- left_join(counted.dat, truednds)
+counted.realdat.with.true <- left_join(counted.realdat, truednds.piunequal)
 
 # Summary of balanced compared to true
 balanced.sum.dnds <- summarize_dnds(balanced.dat.with.true)
@@ -169,6 +182,7 @@ mean.sum.balanced.true.dn.ds <- balanced.sum.dn.ds %>% group_by(method, ntaxa, b
 
 
 ### Save all the things!
+write_csv(counted.realdat.with.true, paste0(DATADIR,"substitution_counts_realtrees.csv"))
 write_csv(counted.dat.with.true, paste0(DATADIR,"substitution_counts.csv"))
 write_csv(balanced.sum.dnds, paste0(DATADIR,"summary_balanced_dnds.csv"))
 write_csv(balanced.sum.dn.ds, paste0(DATADIR,"summary_balanced_dn_ds.csv"))
