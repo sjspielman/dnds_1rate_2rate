@@ -6,92 +6,7 @@ require(readr)
 require(ggrepel)
 require(broom)
 
-
-PLOTDIR <- "figures/"
-DATADIR <- "dataframes/"
-method_order  <- c("SLAC1", "FEL1", "FUBAR1", "SLAC2", "FEL2", "FUBAR2")
-method_colors <- c("deeppink3", "red", "darkred", "skyblue", "dodgerblue", "blue")
-method_colors_nofel2 <- c("deeppink3", "red", "darkred", "skyblue", "blue")
-
-felfubar_colors <- c("red", "darkred", "dodgerblue", "blue")
-dn_ds_colors <- c("red", "dodgerblue")
-
-
-### Read in and factorize data ###
-dnds.sum.mean  <- read_csv(paste0(DATADIR, "mean_summary_balanced_dnds.csv"))
-dn.ds.sum.mean <- read_csv(paste0(DATADIR, "mean_summary_balanced_dn_ds.csv"))
-dnds.sum       <- read_csv(paste0(DATADIR, "summary_balanced_dnds.csv"))
-dn.ds.sum      <- read_csv(paste0(DATADIR, "summary_balanced_dn_ds.csv"))
-real.dnds.sum  <- read_csv(paste0(DATADIR, "summary_real_dnds.csv"))
-real.dn.ds.sum <- read_csv(paste0(DATADIR, "summary_real_dn_ds.csv"))
-counted        <- read_csv(paste0(DATADIR, "substitution_counts.csv"))
-counted.real   <- read_csv(paste0(DATADIR, "substitution_counts_realtrees.csv"))
-
-dnds.sum.mean$method  <- factor(dnds.sum.mean$method, levels = method_order)
-dn.ds.sum.mean$method <- factor(dn.ds.sum.mean$method, levels = method_order)
-dnds.sum$method       <- factor(dnds.sum$method, levels = method_order)
-dn.ds.sum$method      <- factor(dn.ds.sum$method, levels = method_order)
-real.dnds.sum$method <- factor(real.dnds.sum$method, levels=c("FUBAR1", "FUBAR2") )
-real.dn.ds.sum$method <- factor(real.dn.ds.sum$method, levels=c("FUBAR1", "FUBAR2") )
-real.dnds.sum$dataset <- factor(real.dnds.sum$dataset, levels = c("amine", "vertrho", "camelid", "h3", "hivrt"))
-real.dn.ds.sum$dataset <- factor(real.dn.ds.sum$dataset, levels = c("amine", "vertrho", "camelid", "h3", "hivrt"))
-
-### Read in and factorize linear model results
-comp.order <- c("FUBAR1 - SLAC1", "FEL1 - SLAC1", "FEL1 - FUBAR1", "SLAC1 - SLAC2", "FUBAR1 - FUBAR2", "FEL1 - FEL2")
-linmodels <- read.csv(paste0(DATADIR, "linear_models.csv"))
-linmodels <- filter(linmodels, comp %in% comp.order)
-linmodels$model <- factor(linmodels$model, levels = c("r", "rmsd"))
-linmodels$comp <- factor(linmodels$comp, levels = comp.order)
-linmodels$biastype <- factor(linmodels$biastype, levels=c("nobias", "bias"), labels=c("No codon bias", "Codon bias"))
-linmodels$pitype   <- factor(linmodels$pitype, levels=c("equalpi", "unequalpi"))
-
-linmodels.heatmap <- read_csv(paste0(DATADIR, "linmodels_heatmap_version.csv"))
-linmodels.heatmap$biastype <- factor(linmodels.heatmap$biastype, levels=c("nobias", "bias"), labels=c("No codon bias", "Codon bias"))
-
-treelen.dat <- dnds.sum %>% mutate(treelen = 2*(ntaxa-1)*bl) %>% filter(method == "FEL1", treelen > 162, treelen < 164) %>% na.omit()
-
-# process balanced counts
-counted <- counted %>% mutate(nscount.ratio = ncount/scount) %>% select(-ncount, -scount) %>% na.omit() %>% filter(!is.infinite(nscount.ratio))
-counted.sitewise <- counted %>%
-                      group_by(pitype, biastype, site, truednds, ntaxa, bl) %>%
-                      summarize(mean_ratio = mean(nscount.ratio))
-counted.repwise <- counted %>%
-                      group_by(pitype, biastype, rep, ntaxa, bl) %>%
-                      summarize(mean_ratio = mean(nscount.ratio))
-
-# process real counts
-counted.real <- counted.real %>% mutate(nscount.ratio = ncount/scount) %>% select(-ncount, -scount) %>% na.omit() %>%filter(!is.infinite(nscount.ratio))
-counted.real.sitewise <- counted.real %>%
-                      group_by(biastype, site, truednds, dataset) %>%
-                      summarize(mean_ratio = mean(nscount.ratio))
-counted.real.repwise <- counted.real %>%
-                      group_by(biastype, rep, dataset) %>%
-                      summarize(mean_ratio = mean(nscount.ratio))
-
-raw.bias <- read_csv(paste0(DATADIR, "results_balancedtrees_bias_unequalpi.csv"), col_types = list(
-  pitype = col_character(),
-  biastype = col_character(),
-  dn = col_double(),
-  ds = col_double(),
-  dnds = col_double(),
-  site = col_integer(),
-  rep = col_integer(),
-  ntaxa = col_integer(),
-  bl = col_double(),
-  method = col_factor(c("SLAC1", "FEL1", "FUBAR1", "SLAC2", "FEL2", "FUBAR2"))))
-raw.nobias <- read_csv(paste0(DATADIR, "results_balancedtrees_nobias_unequalpi.csv"), col_types = list(
-  pitype = col_character(),
-  biastype = col_character(),
-  dn = col_double(),
-  ds = col_double(),
-  dnds = col_double(),
-  site = col_integer(),
-  rep = col_integer(),
-  ntaxa = col_integer(),
-  bl = col_double(),
-  method = col_factor(c("SLAC1", "FEL1", "FUBAR1", "SLAC2", "FEL2", "FUBAR2"))))
-
-source("build_figure_legends.R") # Script **fully dependent on this one (including data loaded above!)** to make figure legends.
+source("load_data_legends.R") # Script **fully dependent on this one** to load data and make most figure legends.
 
 
 
@@ -354,8 +269,6 @@ save_plot(paste0(PLOTDIR, "heatmap.pdf"), heatmap.true.grid2, base_width = 16, b
 ############################### Violins of optimized branch lengths  ###############################
 ####################################################################################################
 
-bl <- read.csv(paste0(DATADIR, "optimized_bl.csv"))
-bl$biastype <- factor(bl$biastype, levels=c("nobias", "bias"), labels=c("No codon bias", "Codon bias"))
 opt.bl <- ggplot(bl, aes(y = meanbl, x = factor(ntaxa))) +
            facet_grid(biastype~bl) +
            geom_violin(alpha=0.8, scale = "width", fill="grey70") +
@@ -367,17 +280,42 @@ save_plot(paste0(PLOTDIR, "optimized_bl_violins.pdf"), opt.bl, base_width = 8, b
 ########################### Scatterplots of dN vs. dN and dN/dS vs. dN/dS  #########################
 ####################################################################################################
 
-raw.nobias %>% dplyr::select(-dnds, -ds) %>%
+raw.bias %>% dplyr::select(-dn, -ds) %>%
   na.omit() %>%
-  group_by(ntaxa, bl, site, method) %>%
-  summarize(mean.dn = mean(dn)) %>%
-  spread(method, mean.dn) -> nobias.compare.dn
+  filter(rep == 1, method %in% c("FEL1","FEL2")) %>%
+  spread(method, dnds)-> bias.compare.dnds
+raw.nobias %>% dplyr::select(-dn, -ds) %>%
+  na.omit() %>%
+  filter(rep == 1, method %in% c("FEL1","FEL2")) %>%
+  spread(method, dnds)-> nobias.compare.dnds
 raw.bias %>% dplyr::select(-dnds, -ds) %>%
   na.omit() %>%
-  group_by(ntaxa, bl, site, method) %>%
-  summarize(mean.dn = mean(dn)) %>%
-  spread(method, mean.dn) -> bias.compare.dn
+  filter(rep == 1, method %in% c("FEL1","FEL2")) %>%
+  spread(method, dn)-> bias.compare.dn
+raw.nobias %>% dplyr::select(-dnds, -ds) %>%
+  na.omit() %>%
+  filter(rep == 1, method %in% c("FEL1","FEL2")) %>%
+  spread(method, dn)-> nobias.compare.dn
 
+
+nobias.fel.dnds <- nobias.compare.dnds %>%
+                  ggplot(aes(x = FEL1, y = FEL2)) +
+                  geom_point() +
+                  facet_grid(ntaxa~bl) +
+                  geom_abline(slope=1, intercept=0, color="red", size=0.7) +
+                  scale_x_continuous(limits=c(0,1), breaks=c(0, 0.5, 1), name = "dN/dS, FEL1") +
+                  scale_y_continuous(limits=c(0,1), breaks=c(0, 0.5, 1), name = "dN/dS, FEL2") +
+                  ggtitle("No codon bias") +
+                  theme(axis.text = element_text(size=10.5))
+bias.fel.dnds  <- bias.compare.dnds %>% filter(bl >= 0.01) %>%
+                  ggplot(aes(x = FEL1, y = FEL2)) +
+                  geom_point() +
+                  facet_grid(ntaxa~bl) +
+                  geom_abline(slope=1, intercept=0, color="red", size=0.7) +
+                  scale_x_continuous(limits=c(0,1), breaks=c(0, 0.5, 1), name = "dN/dS, FEL1") +
+                  scale_y_continuous(limits=c(0,1), breaks=c(0, 0.5, 1), name = "dN/dS, FEL2") +
+                  ggtitle("Codon bias") +
+                  theme(axis.text = element_text(size=10.5))
 nobias.fel.dn <- nobias.compare.dn %>%
                   ggplot(aes(x = FEL1, y = FEL2)) +
                   geom_point() +
@@ -385,7 +323,8 @@ nobias.fel.dn <- nobias.compare.dn %>%
                   geom_abline(slope=1, intercept=0, color="red", size=0.7) +
                   scale_x_continuous(limits=c(0,1), breaks=c(0, 0.5, 1), name = "dN, FEL1") +
                   scale_y_continuous(limits=c(0,1), breaks=c(0, 0.5, 1), name = "dN, FEL2") +
-                  ggtitle("No codon bias")
+                  ggtitle("No codon bias") +
+                  theme(axis.text = element_text(size=10.5))
 bias.fel.dn   <- bias.compare.dn %>%
                   ggplot(aes(x = FEL1, y = FEL2)) +
                   geom_point() +
@@ -393,40 +332,10 @@ bias.fel.dn   <- bias.compare.dn %>%
                   geom_abline(slope=1, intercept=0, color="red", size=0.7) +
                   scale_x_continuous(limits=c(0,1), breaks=c(0, 0.5, 1), name = "dN, FEL1") +
                   scale_y_continuous(limits=c(0,1), breaks=c(0, 0.5, 1), name = "dN, FEL2") +
-                  ggtitle("Codon bias")
-dn.same.grid <- plot_grid(nobias.fel.dn, bias.fel.dn, nrow=1, labels=c("A", "B"), label_size=20)
-save_plot(paste0(PLOTDIR, "samedn.pdf"), dn.same.grid, base_width = 10, base_height=5)
-
-
-raw.nobias %>% dplyr::select(-dn, -ds) %>%
-  na.omit() %>%
-  group_by(ntaxa, bl, site, method) %>%
-  summarize(mean.dnds = mean(dnds)) %>%
-  spread(method, mean.dnds) -> nobias.compare.dnds
-raw.bias  %>% dplyr::select(-dn, -ds) %>%
-  na.omit() %>%
-  group_by(ntaxa, bl, site, method) %>%
-  summarize(mean.dnds = mean(dnds)) %>%
-  spread(method, mean.dnds) -> bias.compare.dnds
-
-nobias.fel.dnds <- nobias.compare.dnds %>% filter(bl >= 0.01) %>%
-                  ggplot(aes(x = FEL1, y = FEL2)) +
-                  geom_point() +
-                  facet_grid(ntaxa~bl) +
-                  geom_abline(slope=1, intercept=0, color="red", size=0.7) +
-                  scale_x_continuous(limits=c(0,1), breaks=c(0, 0.5, 1), name = "dN/dS, FEL1") +
-                  scale_y_continuous(limits=c(0,1), breaks=c(0, 0.5, 1), name = "dN/dS, FEL2") +
-                  ggtitle("No codon bias")
-bias.fel.dnds  <- bias.compare.dn %>% filter(bl >= 0.01) %>%
-                  ggplot(aes(x = FEL1, y = FEL2)) +
-                  geom_point() +
-                  facet_grid(ntaxa~bl) +
-                  geom_abline(slope=1, intercept=0, color="red", size=0.7) +
-                  scale_x_continuous(limits=c(0,1), breaks=c(0, 0.5, 1), name = "dN/dS, FEL1") +
-                  scale_y_continuous(limits=c(0,1), breaks=c(0, 0.5, 1), name = "dN/dS, FEL2") +
-                  ggtitle("Codon bias")
-dnds.same.grid <- plot_grid(nobias.fel.dnds, bias.fel.dnds, nrow=1, labels=c("A", "B"), label_size=20)
-save_plot(paste0(PLOTDIR, "samednds.pdf"), dnds.same.grid, base_width = 10, base_height=5)
+                  ggtitle("Codon bias") +
+                  theme(axis.text = element_text(size=10.5))
+dnds.dn.grid <- plot_grid(nobias.fel.dnds, bias.fel.dnds, nobias.fel.dn, bias.fel.dn, labels="AUTO", nrow=2)
+save_plot(paste0(PLOTDIR, "scatter_dn_dnds_rep1.pdf"), dnds.dn.grid, base_width = 12, base_height=10)
 
 
 
@@ -456,7 +365,7 @@ unequal.nobias <- counted.repwise %>% filter(biastype == "nobias") %>%
                     ggplot(aes(x = as.factor(ntaxa), y = mean_ratio, fill = as.factor(bl))) +
                     geom_boxplot(outlier.size = 0.75) +
                     geom_hline(yintercept=1) +
-                    scale_color_hue(l=40, name = "Branch Lengths") +
+                    scale_fill_hue(l=50) +
                     xlab("Number of Taxa") + ylab("Mean N/S substitutions") +
                     ggtitle("No codon bias") +
                     scale_y_continuous(limits=c(0,4)) +
@@ -466,7 +375,7 @@ unequal.bias <- counted.repwise %>% filter(biastype == "bias") %>%
                     ggplot(aes(x = as.factor(ntaxa), y = mean_ratio, fill = as.factor(bl))) +
                     geom_boxplot(outlier.size = 0.75) +
                     geom_hline(yintercept=1) +
-                    scale_color_hue(l=40, name = "Branch Lengths") +
+                    scale_fill_hue(l=50) +
                     xlab("Number of Taxa") + ylab("Mean N/S substitutions") +
                     ggtitle("Codon bias") +
                     scale_y_continuous(limits=c(0,4)) +
@@ -506,7 +415,7 @@ sub.counted.sitewise %>%
 dnds.nsratio.intercept %>%
   ggplot(aes(x = as.factor(ntaxa), y = intercept, group = as.factor(bl), color = as.factor(bl))) +
     geom_line(size=0.75, alpha=0.8) + geom_point(size=2.75, alpha=0.8) +
-    scale_color_hue(l=40, name = "Branch Lengths     ") +
+    scale_color_hue(l=50, name = "Branch Lengths     ") +
     facet_grid(~biastype) +
     background_grid("xy") +
     scale_y_continuous(limits=c(0.2, 1.1)) +
@@ -516,35 +425,6 @@ dnds.nsratio.intercept %>%
 
 nsratio.intercept.grid <- plot_grid(true.ratio.scatter, true.intercept, nrow=2, labels="AUTO")
 save_plot(paste0(PLOTDIR,"truednds_counts_intercept.pdf"), nsratio.intercept.grid, base_width = 7, base_height=6.5)
-
-
-
-
-####################################################################################################
-############################# Counted substitutions vs true dN/dS INTERCEPT ########################
-####################################################################################################
-
-
-counted.sitewise %>%
-  filter(mean_ratio > 1e-10, pitype == "unequalpi") %>%
-  group_by(biastype, ntaxa, bl) %>%
-  do(tidy(lm(truednds ~ mean_ratio, data=.))) %>%
-  dplyr::select(-std.error, -statistic, -p.value) %>%
-  summarize(intercept = sum(estimate)) -> dnds.nsratio.intercept
-dnds.nsratio.intercept$biastype <- factor(dnds.nsratio.intercept$biastype, levels=c("nobias", "bias"), labels=c("No codon bias", "Codon bias"))
-
-dnds.nsratio.intercept %>%
-  ggplot(aes(x = as.factor(ntaxa), y = intercept, group = as.factor(bl), color = as.factor(bl))) +
-    geom_line(size=0.75, alpha=0.8) + geom_point(size=2.75, alpha=0.8) +
-    facet_grid(~biastype) +
-    scale_color_hue(l=40, name = "Branch Lengths     ") +
-    background_grid("xy") +
-    scale_y_continuous(limits=c(0.2, 1.1)) +
-    xlab("Number of Taxa") + ylab("dN/dS at Intercept") +
-    theme(legend.position = "bottom") -> intercept.plot
-#    geom_text_repel(nudge_x=0.15, size=3.5, aes(label = round(intercept,2))) +
-
-save_plot(paste0(PLOTDIR,"truednds_at_intercept.pdf"), intercept.plot, base_width = 8, base_height=3.5)
 
 
 
@@ -562,20 +442,12 @@ bias <- raw.bias %>%
   na.omit() %>% filter(!is.infinite(nscount.ratio)) %>%
   process.raw.dnds()
 
-bias.fel2 <- raw.bias %>%
-  filter(method == "FEL2") %>%
-  inner_join(counted) %>%
-  dplyr::select(dn, ds, site, rep, ntaxa, bl, nscount.ratio, truedn, trueds) %>%
-  na.omit() %>% filter(!is.infinite(nscount.ratio)) %>%
-  process.raw.dn.ds()
-
 nobias <- raw.nobias %>%
   filter(method %in% c("FEL1", "FEL2")) %>%
   inner_join(counted) %>%
   dplyr::select(dnds, site, rep, ntaxa, bl, method, nscount.ratio, truednds) %>%
   na.omit() %>% filter(!is.infinite(nscount.ratio)) %>%
   process.raw.dnds()
-nobias %>% filter(method == "FEL2") -> nobias.fel2
 
 bias %>%
   ggplot(aes(x = factor(ntaxa), y = meanr.dnds, group = interaction(sitetype, method), color=method, shape = sitetype)) +
