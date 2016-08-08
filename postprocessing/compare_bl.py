@@ -19,7 +19,7 @@ def extract_bl(rep, n, bl, pitype, bias, path):
 outfile = "dataframes/optimized_bl.csv"
 with open(outfile, "w") as f:
     f.write("rep,ntaxa,bl,biastype,meanbl\n")
-directory = "/Users/sjspielman/Dropbox/dnds1rate2rate_data_results/results/unequalpi_slac_nucfits/"
+directory = "../results/unequalpi_nucfits/"
 for biastype in ["nobias", "bias"]:
     for rep in range(1,51):
         for bl in [0.0025, 0.01, 0.04, 0.16, 0.64]:

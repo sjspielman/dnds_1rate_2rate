@@ -1,6 +1,5 @@
 # Process results into nice and clean dataframes, to be saved in dataframes/ directory.
 
-
 require(readr)
 require(dplyr)
 require(tidyr)
@@ -29,7 +28,7 @@ truednds %>% filter(pitype == "unequalpi") %>% dplyr::select(-pitype) -> truednd
 
 
 # Counted substitutions, balanced trees
-counted.path <- "/Users/sjspielman/Dropbox/dnds1rate2rate_data_results/counted_substitutions/"
+counted.path <- "../count_substitutions/balanced_trees_counts"
 files <- dir(path = counted.path, pattern = "*counted.txt")
 data_frame(filename = files) %>%
   mutate(file_contents = map(filename,
@@ -42,19 +41,6 @@ data_frame(filename = files) %>%
          ncount = ns_changes,
          scount = s_changes) %>%
   dplyr::select(-rep1, -ntaxa1, -bl1, -deleteme, -ns_sites, -s_sites, -ns_changes, -s_changes) -> counted.dat
-
-# Counted substitutions, real trees
-counted.path <- "/Users/sjspielman/Dropbox/dnds1rate2rate_data_results/counted_substitutions/realtrees/"
-files <- dir(path = counted.path, pattern = "*counted.txt")
-data_frame(filename = files) %>%
-  mutate(file_contents = map(filename,
-           ~ read_tsv(file.path(counted.path, .)))) %>%
-  unnest() %>%
-  separate(filename, c("rep", "dataset", "pitype", "biastype", "deleteme"), sep="_") %>%
-  mutate(rep = as.integer(str_replace(rep, "rep([0-9]+)","\\1")),
-         ncount = ns_changes,
-         scount = s_changes) %>%
-  dplyr::select(-deleteme, -ns_sites, -s_sites, -ns_changes, -s_changes) -> counted.realdat
 
 ######### Process inferences for real tree simulations ##############
 data.path <- "../results/realtrees_results/"
