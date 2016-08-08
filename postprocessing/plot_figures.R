@@ -3,7 +3,6 @@ require(tidyr)
 require(grid)
 require(cowplot)
 require(readr)
-require(ggrepel)
 require(broom)
 
 source("load_data_legends.R") # Script **fully dependent on this one** to load data and make most figure legends.
