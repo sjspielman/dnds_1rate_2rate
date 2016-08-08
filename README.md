@@ -8,7 +8,7 @@
 
 - [`results/`](./results/) contains all *dN/dS* inference files made by HyPhy, for both simulations along [`balanced trees`](./results/balancedtrees_results/) and [`empirical trees`](./results/realtrees_results/). The directory [`unequalpi_nucfits/`](./results/unequalpi_nucfits/) contains results for the nucleotide fits that HyPhy performs before rate calculation (branch lengths are optimized here). The files here are specifically from SLAC inference. Note that all inference methods, as coded in HyPhy, employ more or less the same procedure for nucleotide fits (slight FUBAR exception, although not terribly different), so this data applies across all methods examined here.
 
-- [`trees/`](./trees) contains all trees used for simulation, as well as a simple script to calculate tree statistic for empirical phylogenies. You can grab all simulated alignments using [this link](https://www.dropbox.com/sh/6k92n9h7x2vgkoq/AABbV7qGDcNy3imRQ1D80JUfa?dl=0). If that link is broken, please contact at stephanie.spielman@gmail.com.
+- [`trees/`](./trees) contains all trees used for simulation, as well as a simple script to calculate tree statistic for empirical phylogenies. You can grab all simulated alignments using [this link](https://www.dropbox.com/sh/6k92n9h7x2vgkoq/AABbV7qGDcNy3imRQ1D80JUfa?dl=0). If that link is broken, please contact me at stephanie.spielman@gmail.com.
 
 - [`simulation/`](./simulation/) contains all scripts and data files used during sequence simulation, as well as true simulation parameters.
 
